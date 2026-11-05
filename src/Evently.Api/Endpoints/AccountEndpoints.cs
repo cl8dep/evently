@@ -20,20 +20,15 @@ public static class AccountEndpoints
         return result;
     });
     auth.MapIdentityApi<AppUser>();
-    auth.MapPost("/logout", async (SignInManager<AppUser> s) => { await s.SignOutAsync(); return Results.NoContent(); });
+    auth.MapPost("/logout", async (SignInManager<AppUser> s) => { await s.SignOutAsync(); return Results.NoContent(); }).WithName("Logout");
     // The browser key only loads the interactive map. Places calls use a separate, server-side key.
-    app.MapGet("/api/config", (PlacesClient places, IConfiguration c) => new { places = places.Enabled, mapsKey = c["GoogleMaps:BrowserKey"] }).RequireAuthorization();
+    app.MapGet("/api/config", (PlacesClient places, IConfiguration c) => new ConfigOut(places.Enabled, c["GoogleMaps:BrowserKey"])).RequireAuthorization().WithName("GetConfig");
     app.MapGet("/api/me", async (ClaimsPrincipal u, UserManager<AppUser> um) =>
     {
         var user = await um.GetUserAsync(u);
-        return new
-        {
-            email = u.Identity?.Name,
-            firstName = user?.FirstName,
-            lastName = user?.LastName,
-            role = u.FindFirstValue(ClaimTypes.Role),
-            setup = u.Identity?.IsAuthenticated != true && !await um.Users.AnyAsync(),
-        };
-    });
+        return new MeOut(
+            u.Identity?.Name, user?.FirstName, user?.LastName, u.FindFirstValue(ClaimTypes.Role),
+            u.Identity?.IsAuthenticated != true && !await um.Users.AnyAsync());
+    }).WithName("GetMe");
     }
 }

@@ -3,7 +3,8 @@ import {
   Alert, Box, Button, Chip, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, InputAdornment, MenuItem, Paper, Stack, TextField, Typography,
 } from '@mui/material'
 import { useEffect, useRef, useState } from 'react'
-import { api, errText, type Role, type UserRow } from '../api'
+import { errText, type Role, type UserSummary } from '../api'
+import { useCreateUser, useDeleteUser, useListUsers, useUpdateUser } from '../api/generated/endpoints'
 import { useAuth } from '../auth'
 
 const ROLES: { role: Role; hint: string }[] = [
@@ -11,6 +12,7 @@ const ROLES: { role: Role; hint: string }[] = [
   { role: 'Editor', hint: 'Create, edit and delete events and categories.' },
   { role: 'Viewer', hint: 'Read-only. Can export the CSV.' },
 ]
+const EMPTY: UserSummary[] = []
 const COLS = 'minmax(0, 1fr) minmax(0, 1.3fr) 100px 88px'
 
 type Draft = { id?: string; firstName: string; lastName: string; email: string; role: Role; password: string }
@@ -18,16 +20,19 @@ const blank: Draft = { firstName: '', lastName: '', email: '', role: 'Viewer', p
 
 export default function Users() {
   const me = useAuth()
-  const [rows, setRows] = useState<UserRow[]>([])
+  const users = useListUsers()
+  const rows = users.data ?? EMPTY
+  const createUser = useCreateUser()
+  const updateUser = useUpdateUser()
+  const deleteUser = useDeleteUser()
   const [draft, setDraft] = useState<Draft | null>(null)
-  const [removing, setRemoving] = useState<UserRow | null>(null)
+  const [removing, setRemoving] = useState<UserSummary | null>(null)
   const [show, setShow] = useState(false)
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
   const busy = useRef(false)
 
-  const load = () => api<UserRow[]>('/api/users').then(setRows, e => setError(errText(e)))
-  useEffect(() => { void load() }, [])
+  useEffect(() => { if (users.error) setError(errText(users.error)) }, [users.error])
 
   // One request at a time: a double click must not create the user twice.
   const run = async (fn: () => Promise<unknown>, done: () => void) => {
@@ -38,7 +43,6 @@ export default function Users() {
     try {
       await fn()
       done()
-      await load()
     } catch (e) {
       setError(errText(e))
     } finally {
@@ -50,11 +54,11 @@ export default function Users() {
   const save = (e: React.FormEvent) => {
     e.preventDefault()
     if (!draft) return
-    const body = { firstName: draft.firstName, lastName: draft.lastName, email: draft.email, role: draft.role, password: draft.password || undefined }
-    void run(() => (draft.id ? api(`/api/users/${draft.id}`, 'PUT', body) : api('/api/users', 'POST', body)), () => setDraft(null))
+    const body = { firstName: draft.firstName, lastName: draft.lastName, email: draft.email, role: draft.role, password: draft.password || null }
+    void run(() => (draft.id ? updateUser.mutateAsync({ id: draft.id, data: body }) : createUser.mutateAsync({ data: body })), () => setDraft(null))
   }
 
-  const remove = () => removing && run(() => api(`/api/users/${removing.id}`, 'DELETE'), () => setRemoving(null))
+  const remove = () => removing && run(() => deleteUser.mutateAsync({ id: removing.id }), () => setRemoving(null))
 
   const open = (d: Draft) => { setError(''); setShow(false); setDraft(d) }
 
@@ -80,7 +84,7 @@ export default function Users() {
             <Typography noWrap color="text.secondary">{u.email}</Typography>
             <span><Chip size="small" variant="outlined" label={u.role} /></span>
             <Stack direction="row" sx={{ justifyContent: 'flex-end', gap: '2px' }}>
-              <IconButton size="small" aria-label={`Edit ${u.email}`} title="Edit" onClick={() => open({ id: u.id, firstName: u.firstName, lastName: u.lastName, email: u.email, role: u.role, password: '' })}><Edit fontSize="small" /></IconButton>
+              <IconButton size="small" aria-label={`Edit ${u.email}`} title="Edit" onClick={() => open({ id: u.id, firstName: u.firstName, lastName: u.lastName, email: u.email ?? '', role: u.role as Role, password: '' })}><Edit fontSize="small" /></IconButton>
               <IconButton size="small" aria-label={`Delete ${u.email}`} title="Delete" disabled={u.email === me.email} onClick={() => { setError(''); setRemoving(u) }}>
                 <DeleteOutlined fontSize="small" sx={{ color: u.email === me.email ? undefined : 'error.main' }} />
               </IconButton>

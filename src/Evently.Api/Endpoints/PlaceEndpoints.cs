@@ -13,10 +13,11 @@ public static class PlaceEndpoints
             if (!google.Enabled) return NotConfigured;
             if (string.IsNullOrWhiteSpace(q) || q.Trim().Length < 3) return Results.Ok(Array.Empty<PlaceSuggestion>());
             return await Call(() => google.Suggest(q.Trim(), session, ct));
-        });
+        }).WithName("AutocompletePlaces").Produces<PlaceSuggestion[]>();
 
         places.MapGet("/{placeId}", async (string placeId, string? session, PlacesClient google, CancellationToken ct) =>
-            google.Enabled ? await Call(() => google.Details(placeId, session, ct)) : NotConfigured);
+            google.Enabled ? await Call(() => google.Details(placeId, session, ct)) : NotConfigured)
+            .WithName("GetPlace").Produces<Location>();
 
     }
 

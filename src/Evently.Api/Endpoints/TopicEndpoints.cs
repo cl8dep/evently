@@ -9,7 +9,8 @@ public static class TopicEndpoints
         var topics = app.MapGroup("/api/topics").RequireAuthorization();
 
         topics.MapGet("/", (AppDb db) => db.Topics.OrderBy(t => t.Name)
-            .Select(t => new { t.Id, t.Name, EventCount = db.Events.Count(e => e.Topics.Any(x => x.Id == t.Id)) }).ToListAsync());
+            .Select(t => new NameCount(t.Id, t.Name, db.Events.Count(e => e.Topics.Any(x => x.Id == t.Id))))
+            .ToListAsync()).WithName("ListTopics");
 
         topics.MapPost("/", async (NameIn body, AppDb db) =>
         {
@@ -20,7 +21,7 @@ public static class TopicEndpoints
             db.Topics.Add(t);
             await db.SaveChangesAsync();
             return Results.Created($"/api/topics/{t.Id}", t);
-        }).RequireAuthorization("Editor");
+        }).RequireAuthorization("Editor").WithName("CreateTopic").Produces<Topic>(201);
 
         topics.MapPut("/{id:int}", async (int id, NameIn body, AppDb db) =>
         {
@@ -32,7 +33,7 @@ public static class TopicEndpoints
             t.Name = name;
             await db.SaveChangesAsync();
             return Results.Ok(t);
-        }).RequireAuthorization("Editor");
+        }).RequireAuthorization("Editor").WithName("UpdateTopic").Produces<Topic>();
 
         topics.MapDelete("/{id:int}", async (int id, AppDb db) =>
         {
@@ -42,6 +43,6 @@ public static class TopicEndpoints
             db.Topics.Remove(t);
             await db.SaveChangesAsync();
             return Results.NoContent();
-        }).RequireAuthorization("Editor");
+        }).RequireAuthorization("Editor").WithName("DeleteTopic");
     }
 }

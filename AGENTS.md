@@ -9,6 +9,7 @@ Event tracker for company networking. ASP.NET Core 10 minimal API (`src/Evently.
 - SPA: `cd client && npm run dev` (port 5173, proxies `/api`)
 - Tests: `dotnet test` (needs the db container)
 - Client checks: `cd client && npx tsc -b && npm run lint`
+- API client: `dotnet build` (Debug) writes `client/openapi.json`, then `cd client && npm run api` regenerates `client/src/api/generated` with Orval (TanStack Query hooks). Commit both.
 - Full stack in Docker: `docker compose up -d --build` (port 8080)
 
 ## Conventions
@@ -26,5 +27,6 @@ Event tracker for company networking. ASP.NET Core 10 minimal API (`src/Evently.
 - The server Google key (`GoogleMaps:ApiKey`) must never be sent to the browser. Only `GoogleMaps:BrowserKey` is.
 - Never commit `.env`, API keys or user-secrets. Tests blank the Google key so they never call Google.
 - Mutating routes require the `Editor` policy and `/api/users` requires `Admin`. A new route needs an explicit choice.
+- Never edit `client/src/api/generated`. Change the endpoint, rebuild, regenerate. An endpoint that returns `IResult` needs `.WithName(...)` and `.Produces<T>()` or its hook is untyped; return records, not anonymous objects. Client code calls the generated hooks, never `fetch` directly.
 - The favicon fetcher downloads user-supplied URLs. Keep the public-address check on every connection.
 - New event creation sends an `Idempotency-Key`; keep that when touching the form.

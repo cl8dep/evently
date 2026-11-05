@@ -2,9 +2,12 @@ import { Save } from '@mui/icons-material'
 import { Alert, Autocomplete, Box, Button, InputAdornment, Paper, Stack, TextField, Typography } from '@mui/material'
 import { DatePicker } from '@mui/x-date-pickers/DatePicker'
 import dayjs from 'dayjs'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link as RouterLink, useNavigate, useParams } from 'react-router-dom'
-import { api, errText, type Category, type EventItem, type Topic } from '../api'
+import { errText, type Category, type Topic } from '../api'
+import {
+  useCreateCategory, useCreateEvent, useCreateTopic, useGetEvent, useListCategories, useListTopics, useUpdateEvent,
+} from '../api/generated/endpoints'
 import Crumbs from '../components/Crumbs'
 import PlaceMap from '../components/PlaceMap'
 import PlaceSearch from '../components/PlaceSearch'
@@ -22,6 +25,7 @@ const empty: Form = {
   venue: '', address: '', city: '', region: '', country: '', latitude: '', longitude: '', topicIds: [],
 }
 
+const EMPTY: never[] = []
 const num = (s: string) => (s === '' ? null : Number(s))
 const stripScheme = (s: string) => s.trim().replace(/^https?:\/\//i, '')
 
@@ -30,8 +34,12 @@ export default function EventForm() {
   const navigate = useNavigate()
   const [f, setF] = useState<Form>(empty)
   const [title, setTitle] = useState('')
-  const [categories, setCategories] = useState<Category[]>([])
-  const [topics, setTopics] = useState<Topic[]>([])
+  const categoriesQuery = useListCategories()
+  const topicsQuery = useListTopics()
+  const categories: Category[] = categoriesQuery.data ?? EMPTY
+  const topics: Topic[] = topicsQuery.data ?? EMPTY
+  const createCategory = useCreateCategory()
+  const createTopic = useCreateTopic()
   const countries = useRefs('countries')
   const currencies = useRefs('currencies')
   const [error, setError] = useState('')
@@ -39,13 +47,18 @@ export default function EventForm() {
   const placesEnabled = usePlacesEnabled()
   const [saving, setSaving] = useState(false)
   // One key per form: a retried or double-clicked create returns the same event instead of a duplicate.
-  const idempotencyKey = useRef(crypto.randomUUID())
+  const [idempotencyKey] = useState(() => crypto.randomUUID())
+  const createEvent = useCreateEvent({ request: { headers: { 'Idempotency-Key': idempotencyKey } } })
+  const updateEvent = useUpdateEvent()
+  const existing = useGetEvent(Number(id), { query: { enabled: !!id } })
 
-  useEffect(() => { api<Category[]>('/api/categories').then(setCategories, e => setError(errText(e))) }, [])
-  useEffect(() => { api<Topic[]>('/api/topics').then(setTopics, e => setError(errText(e))) }, [])
   useEffect(() => {
-    if (!id) return
-    api<EventItem>(`/api/events/${id}`).then(e => {
+    const err = categoriesQuery.error ?? topicsQuery.error ?? existing.error
+    if (err) setError(errText(err))
+  }, [categoriesQuery.error, topicsQuery.error, existing.error])
+  useEffect(() => {
+    const e = existing.data
+    if (e) {
       setTitle(e.title)
       setF({
         title: e.title, description: e.description ?? '', categoryId: String(e.categoryId), website: stripScheme(e.website ?? ''),
@@ -55,8 +68,8 @@ export default function EventForm() {
         latitude: e.location.latitude?.toString() ?? '', longitude: e.location.longitude?.toString() ?? '',
         topicIds: e.topics.map(t => t.id),
       })
-    }, e => setError(errText(e)))
-  }, [id])
+    }
+  }, [existing.data])
 
   const titleError = tried && !f.title.trim()
   const categoryError = tried && !f.categoryId
@@ -87,8 +100,8 @@ export default function EventForm() {
     setSaving(true)
     try {
       const saved = id
-        ? await api<EventItem>(`/api/events/${id}`, 'PUT', body)
-        : await api<EventItem>('/api/events', 'POST', body, { 'Idempotency-Key': idempotencyKey.current })
+        ? await updateEvent.mutateAsync({ id: Number(id), data: body })
+        : await createEvent.mutateAsync({ data: body })
       navigate(`/events/${saved.id}`)
     } catch (err) {
       setError(errText(err))
@@ -150,8 +163,7 @@ export default function EventForm() {
               if (!c) return setF({ ...f, categoryId: '' })
               if (c.id !== -1) return setF({ ...f, categoryId: String(c.id) })
               try {
-                const created = await api<Category>('/api/categories', 'POST', { name: c.name })
-                setCategories(prev => [...prev, created].sort((x, y) => x.name.localeCompare(y.name)))
+                const created = await createCategory.mutateAsync({ data: { name: c.name } })
                 setF(p => ({ ...p, categoryId: String(created.id) }))
               } catch (err) {
                 setError(errText(err))
@@ -182,8 +194,7 @@ export default function EventForm() {
               const ids = picked.filter(t => t.id !== -1).map(t => t.id)
               if (!add) return setF({ ...f, topicIds: ids })
               try {
-                const created = await api<Topic>('/api/topics', 'POST', { name: add.name })
-                setTopics(prev => [...prev, created].sort((x, y) => x.name.localeCompare(y.name)))
+                const created = await createTopic.mutateAsync({ data: { name: add.name } })
                 setF(p => ({ ...p, topicIds: [...ids, created.id] }))
               } catch (err) {
                 setError(errText(err))

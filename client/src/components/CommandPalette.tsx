@@ -5,50 +5,38 @@ import {
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { api } from '../api'
+import { useSearch } from '../api/generated/endpoints'
+import type { SearchResults } from '../api/generated/model'
 import { useAuth } from '../auth'
 import { place, shortRange } from '../format'
 import EventIcon from './EventIcon'
 
-type Results = {
-  events: { id: number; title: string; startDate: string; city?: string | null; country?: string | null; iconUpdatedAt?: string | null }[]
-  categories: { id: number; name: string }[]
-  topics: { id: number; name: string }[]
-  users: { id: string; firstName: string; lastName: string; email: string }[]
-}
-
 type Item = { key: string; group: string; label: string; secondary?: string; icon: ReactNode; to: string }
 
-const none: Results = { events: [], categories: [], topics: [], users: [] }
+const none: SearchResults = { events: [], categories: [], topics: [], users: [] }
 
 export default function CommandPalette({ open, onClose }: { open: boolean; onClose: () => void }) {
   const navigate = useNavigate()
   const { canEdit, isAdmin } = useAuth()
   const [q, setQ] = useState('')
-  const [found, setFound] = useState<Results>(none)
-  const [loading, setLoading] = useState(false)
+  const [debounced, setDebounced] = useState('')
   const [active, setActive] = useState(0)
   const listRef = useRef<HTMLUListElement>(null)
   const term = q.trim()
 
   useEffect(() => {
-    if (!open) return
-    setQ('')
-    setFound(none)
+    if (open) setQ('')
   }, [open])
 
   useEffect(() => {
-    if (term.length < 2) { setFound(none); setLoading(false); return }
-    let stale = false
-    setLoading(true)
-    const t = setTimeout(() => {
-      api<Results>(`/api/search?q=${encodeURIComponent(term)}`).then(
-        r => { if (!stale) { setFound(r); setLoading(false) } },
-        () => { if (!stale) { setFound(none); setLoading(false) } },
-      )
-    }, 200)
-    return () => { stale = true; clearTimeout(t) }
+    const t = setTimeout(() => setDebounced(term), 200)
+    return () => clearTimeout(t)
   }, [term])
+
+  const ready = term.length >= 2 && term === debounced
+  const search = useSearch({ q: debounced }, { query: { enabled: open && ready } })
+  const found = ready && search.data ? search.data : none
+  const loading = term.length >= 2 && (!ready || search.isFetching)
 
   const items = useMemo<Item[]>(() => {
     const pages: Item[] = [
@@ -66,8 +54,8 @@ export default function CommandPalette({ open, onClose }: { open: boolean; onClo
       ...found.categories.map(c => ({ key: `c${c.id}`, group: 'Categories', label: c.name, secondary: 'Show its events', icon: <Sell fontSize="small" />, to: `/events?categoryId=${c.id}` })),
       ...found.topics.map(t => ({ key: `t${t.id}`, group: 'Topics', label: t.name, secondary: 'Show its events', icon: <Tag fontSize="small" />, to: `/events?topicId=${t.id}` })),
       ...found.users.map(u => ({
-        key: `u${u.id}`, group: 'Users', label: [u.firstName, u.lastName].filter(Boolean).join(' ') || u.email,
-        secondary: u.email, icon: <Person fontSize="small" />, to: '/users',
+        key: `u${u.id}`, group: 'Users', label: [u.firstName, u.lastName].filter(Boolean).join(' ') || (u.email ?? ''),
+        secondary: u.email ?? undefined, icon: <Person fontSize="small" />, to: '/users',
       })),
       ...pages,
     ]

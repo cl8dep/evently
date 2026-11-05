@@ -12,24 +12,26 @@ public static class EventEndpoints
         var events = app.MapGroup("/api/events").RequireAuthorization();
 
         events.MapGet("/", async ([AsParameters] EventFilter f, AppDb db) =>
-            await db.Events.WithDetails().Filter(f).OrderBy(e => e.StartDate).ToListAsync());
+            await db.Events.WithDetails().Filter(f).OrderBy(e => e.StartDate).ToListAsync()).WithName("ListEvents");
 
         events.MapGet("/export.csv", async ([AsParameters] EventFilter f, AppDb db) =>
         {
             var list = await db.Events.WithDetails().Filter(f).OrderBy(e => e.StartDate).ToListAsync();
             var bytes = Encoding.UTF8.GetPreamble().Concat(Encoding.UTF8.GetBytes(Csv.Build(list))).ToArray();
             return Results.File(bytes, "text/csv; charset=utf-8", $"events-{DateTime.UtcNow:yyyy-MM-dd}.csv");
-        });
+        }).ExcludeFromDescription();
 
         events.MapPost("/import", async (HttpRequest req, AppDb db, ClaimsPrincipal user, CancellationToken ct) =>
         {
             using var reader = new StreamReader(req.Body, Encoding.UTF8);
             var result = await EventImporter.Run(await reader.ReadToEndAsync(ct), db, user.Identity!.Name!, ct);
             return result.Errors.Count > 0 ? Results.UnprocessableEntity(new { error = string.Join(" ", result.Errors) }) : Results.Ok(result);
-        }).RequireAuthorization("Editor").WithMetadata(new RequestSizeLimitAttribute(5_000_000));
+        }).RequireAuthorization("Editor").WithMetadata(new RequestSizeLimitAttribute(5_000_000))
+            .Accepts<string>("text/csv").Produces<ImportResult>().WithName("ImportEvents");
 
         events.MapGet("/{id:int}", async (int id, AppDb db) =>
-            await db.Events.WithDetails().FirstOrDefaultAsync(e => e.Id == id) is { } e ? Results.Ok(e) : Results.NotFound());
+            await db.Events.WithDetails().FirstOrDefaultAsync(e => e.Id == id) is { } e ? Results.Ok(e) : Results.NotFound())
+            .WithName("GetEvent").Produces<Event>();
 
         events.MapGet("/{id:int}/icon", async (int id, AppDb db, HttpResponse res) =>
         {
@@ -40,7 +42,7 @@ public static class EventEndpoints
             res.Headers["X-Content-Type-Options"] = "nosniff";
             res.Headers.CacheControl = "private, max-age=3600";
             return Results.File(icon.Data, icon.ContentType);
-        });
+        }).ExcludeFromDescription();
 
         events.MapPost("/{id:int}/icon/refresh", async (int id, AppDb db, FaviconFetcher favicons, CancellationToken ct) =>
         {
@@ -51,11 +53,10 @@ public static class EventEndpoints
             await EventEnrichment.Apply(db, e, site);
             if (site.Icon is null) return Results.Json(new { error = "Could not fetch an icon from the website." }, statusCode: 502);
             return Results.Ok(e);
-        }).RequireAuthorization("Editor");
+        }).RequireAuthorization("Editor").WithName("RefreshEventIcon").Produces<Event>();
 
-        events.MapPost("/", async (EventIn body, HttpRequest req, AppDb db, ClaimsPrincipal user, FaviconFetcher favicons, CancellationToken ct) =>
+        events.MapPost("/", async (EventIn body, [FromHeader(Name = "Idempotency-Key")] string? key, AppDb db, ClaimsPrincipal user, FaviconFetcher favicons, CancellationToken ct) =>
         {
-            var key = req.Headers["Idempotency-Key"].FirstOrDefault();
             if (key is { Length: > 64 }) return Failure.Invalid("Idempotency-Key", "Key is too long (max 64).");
             if (key is not null && await EventQueries.Seen(db, key, ct) is { } seen) return Results.Ok(seen);
             if (await EventRules.Validate(body, db) is { } problem) return problem;
@@ -78,7 +79,7 @@ public static class EventEndpoints
             if (e.Website is not null) await EventEnrichment.Apply(db, e, await favicons.Fetch(e.Website, ct));
             await db.Entry(e).Reference(x => x.Category).LoadAsync(ct);
             return Results.Created($"/api/events/{e.Id}", e);
-        }).RequireAuthorization("Editor");
+        }).RequireAuthorization("Editor").WithName("CreateEvent").Produces<Event>(201).Produces<Event>();
 
         events.MapPut("/{id:int}", async (int id, EventIn body, AppDb db, FaviconFetcher favicons, CancellationToken ct) =>
         {
@@ -97,7 +98,7 @@ public static class EventEndpoints
             if (e.Website != oldSite && e.Website is not null) await EventEnrichment.Apply(db, e, await favicons.Fetch(e.Website, ct));
             await db.Entry(e).Reference(x => x.Category).LoadAsync(ct);
             return Results.Ok(e);
-        }).RequireAuthorization("Editor");
+        }).RequireAuthorization("Editor").WithName("UpdateEvent").Produces<Event>();
 
         events.MapDelete("/{id:int}", async (int id, AppDb db) =>
         {
@@ -106,6 +107,6 @@ public static class EventEndpoints
             db.Events.Remove(e);
             await db.SaveChangesAsync();
             return Results.NoContent();
-        }).RequireAuthorization("Editor");
+        }).RequireAuthorization("Editor").WithName("DeleteEvent");
     }
 }

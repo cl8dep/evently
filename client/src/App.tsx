@@ -3,9 +3,11 @@ import {
   Box, Button, ButtonBase, CircularProgress, Drawer, IconButton, List, ListItemButton, ListItemIcon, ListItemText, Typography, useMediaQuery,
 } from '@mui/material'
 import { useTheme } from '@mui/material/styles'
-import { useCallback, useEffect, useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
+import { useEffect, useState } from 'react'
 import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
-import { api, type Me } from './api'
+import type { Me, Role } from './api'
+import { getGetMeQueryKey, useGetMe, useLogout } from './api/generated/endpoints'
 import { AuthContext } from './auth'
 import CommandPalette from './components/CommandPalette'
 import Logo from './components/Logo'
@@ -18,21 +20,19 @@ import Login from './pages/Login'
 import Users from './pages/Users'
 
 const WIDTH = 220
+const loggedOut: Me = { email: null, firstName: null, lastName: null, role: null, setup: false }
 const isMac = /Mac|iPhone|iPad/.test(navigator.platform)
 
 export default function App() {
-  const [me, setMe] = useState<Me | null | undefined>(undefined)
+  const qc = useQueryClient()
+  const meQuery = useGetMe()
+  const me = meQuery.data ?? (meQuery.isError ? loggedOut : undefined)
+  const logoutRequest = useLogout({ mutation: { meta: { skipInvalidate: true } } })
   const [menu, setMenu] = useState(false)
   const [searching, setSearching] = useState(false)
   const { pathname, search } = useLocation()
   const navigate = useNavigate()
   const compact = useMediaQuery(useTheme().breakpoints.down('md'))
-
-  const refresh = useCallback(
-    () => api<Me>('/api/me').then(setMe, () => setMe({ email: null, firstName: null, lastName: null, role: null, setup: false })),
-    [],
-  )
-  useEffect(() => { void refresh() }, [refresh])
 
   useEffect(() => { setMenu(false) }, [pathname])
 
@@ -45,15 +45,16 @@ export default function App() {
   }, [])
 
   if (me === undefined) return <Box sx={{ p: 4 }}><CircularProgress /></Box>
-  if (me === null || me.email === null) return <Login setup={me?.setup ?? false} onDone={refresh} />
+  if (me.email === null) return <Login setup={me.setup} onDone={() => void meQuery.refetch()} />
   const { email } = me
-  const role = me.role ?? 'Viewer'
+  const role = (me.role ?? 'Viewer') as Role
   const name = [me.firstName, me.lastName].filter(Boolean).join(' ')
   const canEdit = role === 'Admin' || role === 'Editor'
 
   const logout = async () => {
-    await api('/api/auth/logout', 'POST')
-    setMe({ email: null, firstName: null, lastName: null, role: null, setup: false })
+    await logoutRequest.mutateAsync()
+    qc.setQueryData(getGetMeQueryKey(), loggedOut)
+    qc.removeQueries({ predicate: q => q.queryKey[0] !== getGetMeQueryKey()[0] })
     navigate('/')
   }
 

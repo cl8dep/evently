@@ -19,7 +19,7 @@ public static class UserEndpoints
              join r in db.Roles on ur.RoleId equals r.Id into rs
              from r in rs.DefaultIfEmpty()
              orderby u.FirstName, u.LastName, u.Email
-             select new { u.Id, u.FirstName, u.LastName, u.Email, Role = r.Name ?? Viewer }).ToListAsync());
+             select new UserSummary(u.Id, u.FirstName, u.LastName, u.Email, r.Name ?? Viewer)).ToListAsync()).WithName("ListUsers");
 
         g.MapPost("/", async (UserIn body, UserManager<AppUser> um) =>
         {
@@ -38,8 +38,8 @@ public static class UserEndpoints
             var created = await um.CreateAsync(user, body.Password!);
             if (!created.Succeeded) return Failure.FromIdentity(created);
             await um.AddToRoleAsync(user, body.Role!);
-            return Results.Created($"/api/users/{user.Id}", new { user.Id, user.FirstName, user.LastName, user.Email, body.Role });
-        });
+            return Results.Created($"/api/users/{user.Id}", new UserSummary(user.Id, user.FirstName, user.LastName, user.Email, body.Role!));
+        }).WithName("CreateUser").Produces<UserSummary>(201);
 
         g.MapPut("/{id}", async (string id, UserIn body, UserManager<AppUser> um) =>
         {
@@ -80,8 +80,8 @@ public static class UserEndpoints
                 if (current is not null) await um.RemoveFromRoleAsync(user, current);
                 await um.AddToRoleAsync(user, body.Role);
             }
-            return Results.Ok(new { user.Id, user.FirstName, user.LastName, user.Email, Role = body.Role ?? current ?? Viewer });
-        });
+            return Results.Ok(new UserSummary(user.Id, user.FirstName, user.LastName, user.Email, body.Role ?? current ?? Viewer));
+        }).WithName("UpdateUser").Produces<UserSummary>();
 
         g.MapDelete("/{id}", async (string id, ClaimsPrincipal me, UserManager<AppUser> um) =>
         {
@@ -92,7 +92,7 @@ public static class UserEndpoints
                 return Results.Conflict(new { error = "This is the only admin." });
             await um.DeleteAsync(user);
             return Results.NoContent();
-        });
+        }).WithName("DeleteUser");
     }
 
     static async Task<bool> IsLastAdmin(UserManager<AppUser> um) => (await um.GetUsersInRoleAsync(Admin)).Count <= 1;

@@ -1,32 +1,33 @@
 import { Autocomplete, TextField } from '@mui/material'
-import { useEffect, useRef, useState } from 'react'
-import { api, errText, type Location } from '../api'
+import { useEffect, useState } from 'react'
+import { errText, type Location } from '../api'
+import { getPlace, useAutocompletePlaces } from '../api/generated/endpoints'
+import type { PlaceSuggestion as Suggestion } from '../api/generated/model'
 
-type Suggestion = { placeId: string; text: string }
+const EMPTY: Suggestion[] = []
 type Props = { venue: string; summary: string; onPick: (l: Location) => void; onClear: () => void; onError: (message: string) => void }
 
 export default function PlaceSearch({ venue, summary, onPick, onClear, onError }: Props) {
   const [input, setInput] = useState(venue)
-  const [options, setOptions] = useState<Suggestion[]>([])
+  const [term, setTerm] = useState('')
   // Autocomplete requests and the final details call share one session so Google bills them together.
-  const session = useRef(crypto.randomUUID())
+  const [session, setSession] = useState(() => crypto.randomUUID())
 
   useEffect(() => { setInput(venue) }, [venue])
 
   useEffect(() => {
-    if (input.trim().length < 3 || input === venue) { setOptions([]); return }
-    const ctrl = new AbortController()
-    const t = setTimeout(() => {
-      api<Suggestion[]>(`/api/places/autocomplete?q=${encodeURIComponent(input.trim())}&session=${session.current}`)
-        .then(r => { if (!ctrl.signal.aborted) setOptions(r) }, e => { if (!ctrl.signal.aborted) { setOptions([]); onError(errText(e)) } })
-    }, 250)
-    return () => { ctrl.abort(); clearTimeout(t) }
-  }, [input, venue, onError])
+    if (input.trim().length < 3 || input === venue) { setTerm(''); return }
+    const t = setTimeout(() => setTerm(input.trim()), 250)
+    return () => clearTimeout(t)
+  }, [input, venue])
+
+  const { data: options = EMPTY, error } = useAutocompletePlaces({ q: term, session }, { query: { enabled: term.length >= 3 } })
+  useEffect(() => { if (error) onError(errText(error)) }, [error, onError])
 
   const pick = async (s: Suggestion) => {
     try {
-      onPick(await api<Location>(`/api/places/${encodeURIComponent(s.placeId)}?session=${session.current}`))
-      session.current = crypto.randomUUID()
+      onPick(await getPlace(s.placeId, { session }))
+      setSession(crypto.randomUUID())
     } catch (e) {
       onError(errText(e))
     }

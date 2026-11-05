@@ -1,8 +1,9 @@
 import { Delete, Edit, OpenInNew, Refresh, WarningAmber } from '@mui/icons-material'
 import { Alert, Box, Button, Chip, Link, Paper, Stack, Typography } from '@mui/material'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Link as RouterLink, useNavigate, useParams } from 'react-router-dom'
-import { api, errText, type EventItem } from '../api'
+import { errText } from '../api'
+import { useDeleteEvent, useGetEvent, useRefreshEventIcon } from '../api/generated/endpoints'
 import Crumbs from '../components/Crumbs'
 import { useAuth } from '../auth'
 import PlaceMap from '../components/PlaceMap'
@@ -13,16 +14,18 @@ export default function EventDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { canEdit } = useAuth()
-  const [e, setE] = useState<EventItem | null>(null)
-  const [error, setError] = useState('')
+  const eventQuery = useGetEvent(Number(id))
+  const deleteEvent = useDeleteEvent()
+  const refreshIcon = useRefreshEventIcon()
+  const e = eventQuery.data
+  const [actionError, setError] = useState('')
+  const error = actionError || (eventQuery.error ? errText(eventQuery.error) : '')
   const [confirming, setConfirming] = useState(false)
-  const [refreshing, setRefreshing] = useState(false)
 
-  useEffect(() => { api<EventItem>(`/api/events/${id}`).then(setE, err => setError(errText(err))) }, [id])
 
   const remove = async () => {
     try {
-      await api(`/api/events/${id}`, 'DELETE')
+      await deleteEvent.mutateAsync({ id: Number(id) })
       navigate('/events')
     } catch (err) {
       setError(errText(err))
@@ -30,14 +33,11 @@ export default function EventDetail() {
   }
 
   const refresh = async () => {
-    setRefreshing(true)
     setError('')
     try {
-      setE(await api<EventItem>(`/api/events/${id}/icon/refresh`, 'POST'))
+      await refreshIcon.mutateAsync({ id: Number(id) })
     } catch (err) {
       setError(errText(err))
-    } finally {
-      setRefreshing(false)
     }
   }
 
@@ -115,7 +115,7 @@ export default function EventDetail() {
                 {e.iconUpdatedAt ? 'Site favicon, fetched automatically' : 'No icon found on the site'}
                 {e.iconUpdatedAt && <Box component="span" sx={{ color: 'text.secondary' }}> &middot; updated {day(e.iconUpdatedAt)}</Box>}
               </span>
-              {canEdit && <Button size="small" startIcon={<Refresh />} disabled={refreshing} onClick={refresh}>{refreshing ? 'Fetching...' : 'Refresh'}</Button>}
+              {canEdit && <Button size="small" startIcon={<Refresh />} disabled={refreshIcon.isPending} onClick={refresh}>{refreshIcon.isPending ? 'Fetching...' : 'Refresh'}</Button>}
             </>
           ))}
           {row('Ticket', e.ticketCost != null && (

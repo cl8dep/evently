@@ -4,30 +4,30 @@ import {
 } from '@mui/material'
 import { useEffect, useRef, useState } from 'react'
 import { Link as RouterLink, useNavigate, useSearchParams } from 'react-router-dom'
-import { api, errText, type Category, type EventItem, type Topic } from '../api'
+import { errText } from '../api'
+import { useImportEvents, useListCategories, useListEvents, useListTopics } from '../api/generated/endpoints'
+import type { ListEventsParams } from '../api/generated/model'
 import EventIcon from '../components/EventIcon'
 import { useAuth } from '../auth'
 import { useRefs } from '../refs'
 import { place, shortRange, ticket } from '../format'
 
 const PAGE = 25
+const EMPTY: never[] = []
 const COLS = 'minmax(0, 2.4fr) 140px 150px minmax(0, 1.4fr) 120px'
 
 export default function Events({ compact }: { compact: boolean }) {
-  const [items, setItems] = useState<EventItem[]>([])
-  const [categories, setCategories] = useState<Category[]>([])
   const [params] = useSearchParams()
   const [q, setQ] = useState(params.get('q') ?? '')
   const [categoryId, setCategoryId] = useState(params.get('categoryId') ?? '')
   const [topicId, setTopicId] = useState(params.get('topicId') ?? '')
-  const [topics, setTopics] = useState<Topic[]>([])
   const [country, setCountry] = useState('')
   const { canEdit } = useAuth()
   const countries = useRefs('countries')
   const [page, setPage] = useState(0)
   const [exported, setExported] = useState(false)
   const [imported, setImported] = useState('')
-  const [rev, setRev] = useState(0)
+  const importEvents = useImportEvents()
   const fileInput = useRef<HTMLInputElement>(null)
   const [error, setError] = useState('')
   const navigate = useNavigate()
@@ -40,11 +40,17 @@ export default function Events({ compact }: { compact: boolean }) {
   const qs = query.toString() ? `?${query}` : ''
   const filtered = qs !== ''
 
-  useEffect(() => { api<Category[]>('/api/categories').then(setCategories, () => {}) }, [rev])
-  useEffect(() => { api<Topic[]>('/api/topics').then(setTopics, () => {}) }, [rev])
-  useEffect(() => {
-    api<EventItem[]>(`/api/events${qs}`).then(r => { setItems(r); setPage(0) }, e => setError(errText(e)))
-  }, [qs, rev])
+  const listParams: ListEventsParams = {
+    ...(q && { Q: q }), ...(categoryId && { CategoryId: Number(categoryId) }),
+    ...(topicId && { TopicId: Number(topicId) }), ...(country && { Country: country }),
+  }
+  const categories = useListCategories().data ?? EMPTY
+  const topics = useListTopics().data ?? EMPTY
+  const events = useListEvents(listParams)
+  const items = events.data ?? EMPTY
+
+  useEffect(() => { setPage(0) }, [qs])
+  useEffect(() => { if (events.error) setError(errText(events.error)) }, [events.error])
 
   const clear = () => { setQ(''); setCategoryId(''); setTopicId(''); setCountry('') }
   const count = `${items.length} ${items.length === 1 ? 'event' : 'events'}`
@@ -55,9 +61,8 @@ export default function Events({ compact }: { compact: boolean }) {
     if (!file) return
     setError(''); setImported(''); setExported(false)
     try {
-      const r = await api<{ imported: number; skipped: number }>('/api/events/import', 'POST', file, { 'Content-Type': 'text/csv' })
+      const r = await importEvents.mutateAsync({ data: await file.text() })
       setImported(`Imported ${r.imported} ${r.imported === 1 ? 'event' : 'events'}${r.skipped ? `, skipped ${r.skipped} already in the list` : ''}.`)
-      setRev(v => v + 1)
     } catch (e) {
       setError(errText(e))
     } finally {
