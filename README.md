@@ -1,5 +1,7 @@
 # Evently
 
+![Events list](docs/events.png)
+
 Track the events your company may attend for networking: what they are, where, when, what they cost and who is going to look at them.
 
 ASP.NET Core 10 API + React SPA, PostgreSQL, email and password sign-in with roles.
