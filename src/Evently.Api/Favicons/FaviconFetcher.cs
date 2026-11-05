@@ -11,9 +11,11 @@ public sealed partial class FaviconFetcher
     const int Vector = 100_000;
 
     readonly HttpClient http;
+    readonly ILogger<FaviconFetcher> log;
 
-    public FaviconFetcher()
+    public FaviconFetcher(ILogger<FaviconFetcher> log)
     {
+        this.log = log;
         // The URL is user-supplied, so every connection (including redirects) is checked against public addresses only.
         var handler = new SocketsHttpHandler
         {
@@ -69,7 +71,9 @@ public sealed partial class FaviconFetcher
         }
         catch (Exception e) when (e is HttpRequestException or TaskCanceledException or OperationCanceledException or UriFormatException)
         {
+            log.LogWarning("Favicon fetch for {Website} failed: {Reason}", website, e.Message);
         }
+        if (icon is null) log.LogWarning("No icon found for {Website}", website);
         return new Site(icon, description);
     }
 
@@ -78,7 +82,11 @@ public sealed partial class FaviconFetcher
         try
         {
             using var res = await http.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, ct);
-            if (!res.IsSuccessStatusCode) return null;
+            if (!res.IsSuccessStatusCode)
+            {
+                log.LogWarning("{Url} returned {Status}", url, (int)res.StatusCode);
+                return null;
+            }
             var type = res.Content.Headers.ContentType?.MediaType ?? "";
             if (typePrefix == "image/" && type is "" or "application/octet-stream" && url.AbsolutePath.EndsWith(".ico", StringComparison.OrdinalIgnoreCase))
                 type = "image/x-icon";
@@ -95,8 +103,9 @@ public sealed partial class FaviconFetcher
             }
             return buffer.Length == 0 ? null : (buffer.ToArray(), type, res.RequestMessage?.RequestUri ?? url);
         }
-        catch (HttpRequestException)
+        catch (HttpRequestException e)
         {
+            log.LogWarning("{Url} failed: {Reason}", url, e.Message);
             return null;
         }
     }
