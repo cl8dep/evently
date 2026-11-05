@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="src/Evently.Api/Evently.Api.csproj" />
+  <Project Path="tests/Evently.Tests/Evently.Tests.csproj" />
+</Solution>

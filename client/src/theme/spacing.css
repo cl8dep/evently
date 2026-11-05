@@ -1,0 +1,63 @@
+/* Spacing, radii, elevation, materials, motion — "Glass" */
+:root {
+  --space-unit: 8px;
+  --space-0_25: 2px;
+  --space-0_5: 4px;
+  --space-0_75: 6px;
+  --space-1: 8px;
+  --space-1_25: 10px;
+  --space-1_5: 12px;
+  --space-1_75: 14px;
+  --space-2: 16px;
+  --space-2_25: 18px;
+  --space-2_5: 20px;
+  --space-3: 24px;
+  --space-3_5: 28px;
+  --space-4: 32px;
+  --space-6: 48px;
+
+  --radius-xs: 8px;       /* menu items, tooltips, kbd, thumbnails, small chips */
+  --radius-sm: 12px;      /* alerts; rows and blocks inside a card or dialog */
+  --radius: 10px;         /* every text-entry surface; segmented controls and tab tracks */
+  --radius-md: 16px;      /* cards, panels, page sections, menus, popovers */
+  --radius-lg: 20px;      /* dialogs, sheets, phone frame */
+  --radius-xl: 16px;      /* floating sidebar: a panel */
+  --radius-bubble: 16px;  /* chat bubbles */
+  --radius-logo-tile: 8px;
+  --radius-email-card: 12px;
+  --radius-pill: 999px;   /* only buttons, chips, badges, status tags, toggles, avatars, progress bars */
+  --radius-checkbox: 5px; /* checkbox only */
+
+  --control-h-sm: 30px;
+  --control-h-md: 34px;
+  --header-h: 56px;
+  --sidebar-w: 240px;
+  --page-max-w: 1700px;
+  --page-pad-x: 28px;
+  --page-pad-y: 32px;
+  --gap-grid: 18px;
+
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.04), 0 8px 24px rgba(0, 0, 0, 0.04);
+  --shadow-raised: 0 1px 3px rgba(0, 0, 0, 0.08), 0 0 0 0.5px rgba(0, 0, 0, 0.04); /* selected pill, segmented thumb */
+  --shadow-float: 0 0 0 0.5px rgba(0, 0, 0, 0.08), 0 10px 30px rgba(0, 0, 0, 0.06); /* floating sidebar */
+  --shadow-menu: 0 0 0 0.5px rgba(0, 0, 0, 0.1), 0 12px 32px rgba(0, 0, 0, 0.14);
+  --shadow-dialog: 0 0 0 0.5px rgba(0, 0, 0, 0.08), 0 24px 60px rgba(0, 0, 0, 0.18);
+  --shadow-base: var(--shadow-menu);
+  --shadow-signin: var(--shadow-dialog);
+  --shadow-toggle: var(--shadow-raised);
+  --focus-ring: 3px solid var(--accent-a50);
+  --focus-offset: 2px;
+
+  --blur-material: blur(30px) saturate(180%); /* @kind other */
+
+  --ease-ui: 150ms cubic-bezier(0.25, 0.1, 0.25, 1); /* @kind other */
+  --ease-input: 150ms ease-out; /* @kind other */
+  --ease-enter: 0.35s cubic-bezier(0.2, 0.8, 0.2, 1); /* @kind other */
+}
+[data-theme="dark"] {
+  --shadow-card: 0 0 0 0.5px rgba(255, 255, 255, 0.06);
+  --shadow-raised: 0 1px 3px rgba(0, 0, 0, 0.5), 0 0 0 0.5px rgba(255, 255, 255, 0.06);
+  --shadow-float: 0 0 0 0.5px rgba(255, 255, 255, 0.08), 0 10px 30px rgba(0, 0, 0, 0.5);
+  --shadow-menu: 0 0 0 0.5px rgba(255, 255, 255, 0.1), 0 12px 32px rgba(0, 0, 0, 0.6);
+  --shadow-dialog: 0 0 0 0.5px rgba(255, 255, 255, 0.1), 0 24px 60px rgba(0, 0, 0, 0.7);
+}

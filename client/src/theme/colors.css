@@ -1,0 +1,136 @@
+/* Colour tokens - "Glass" direction (Apple-like).
+   Brand yellow is an ACCENT only (logo tile with white star, selected icons, focus ring, tints) —
+   never a large fill and never under dark text. Actions are ink. */
+:root {
+  /* Brand yellow ramp */
+  --brand-50: hsl(45, 100%, 96%);
+  --brand-100: hsl(45, 100%, 90%);
+  --brand-200: hsl(45, 100%, 80%);
+  --brand-300: hsl(45, 100%, 70%);
+  --brand-400: hsl(45, 100%, 65%);
+  --brand-500: #ffc629;
+  --brand-600: hsl(42, 95%, 52%);
+  --brand-700: hsl(40, 90%, 42%);
+  --brand-800: hsl(38, 85%, 30%);
+  --brand-900: hsl(35, 80%, 18%);
+
+  /* System grays (Apple-style) */
+  --gray-1: #8e8e93;
+  --gray-2: #aeaeb2;
+  --gray-3: #c7c7cc;
+  --gray-4: #d1d1d6;
+  --gray-5: #e5e5ea;
+  --gray-6: #f2f2f7;
+
+  /* Ink */
+  --ink: #1d1d1f;
+  --ink-2: #6e6e73;
+  --ink-3: #8e8e93;
+
+  /* Accent (brand) */
+  --accent: #ffc629;
+  --accent-strong: #e0a800;          /* selected icons, stat icons, links-on-tint */
+  --accent-on: #ffffff;              /* glyphs on the yellow tile (white star) */
+  --accent-gradient: linear-gradient(#ffd44f, #ffc629); /* @kind color */
+  --accent-a08: rgba(255, 198, 41, 0.08);
+  --accent-a12: rgba(255, 198, 41, 0.12);
+  --accent-a16: rgba(255, 198, 41, 0.16);
+  --accent-a20: rgba(255, 198, 41, 0.20);
+  --accent-a28: rgba(255, 198, 41, 0.28);
+  --accent-a50: rgba(255, 198, 41, 0.5);
+
+  /* Status — Apple system colours; *-ink for text on *-bg tints */
+  --success: #34c759; --success-ink: #1d7a3a; --success-bg: #e6f4ea;
+  --warning: #ff9f0a; --warning-ink: #8a5a00; --warning-bg: #fff4d6;
+  --error: #ff3b30;   --error-ink: #b42318;   --error-bg: #fdecea;
+  --info: #8e8e93;    --info-ink: #6e6e73;    --info-bg: rgba(118, 118, 128, 0.12);
+
+  /* ---- Semantic (light) ---- */
+  --primary: var(--ink);             /* contained buttons, selected filter chips, checkboxes */
+  --primary-hover: #3a3a3c;
+  --primary-dark: #3a3a3c;
+  --primary-light: #48484a;
+  --primary-contrast: #ffffff;
+  --secondary: #ffffff;
+  --secondary-contrast: var(--ink);
+
+  --text-primary: var(--ink);
+  --text-secondary: var(--ink-2);
+  --text-tertiary: var(--ink-3);
+  --text-disabled: rgba(60, 60, 67, 0.3);
+  --icon-action: var(--ink-3);
+
+  --bg-default: #f2f2f7;                       /* page */
+  --bg-paper: #f7f7f9;                         /* solid panel fallback */
+  --bg-warm-glow: #fff7dc;                     /* top-left radial glow behind the app */
+  --surface-card: #ffffff;
+  --surface-glass: rgba(246, 246, 248, 0.72);  /* sidebar, toolbars — always with --blur-material */
+  --surface-menu: rgba(255, 255, 255, 0.86);
+  --surface-selected: #ffffff;                 /* selected nav pill / segmented thumb */
+
+  --fill: rgba(118, 118, 128, 0.12);           /* gray buttons, inputs, segmented track */
+  --fill-hover: rgba(118, 118, 128, 0.2);
+  --fill-press: rgba(118, 118, 128, 0.28);
+  --divider: rgba(60, 60, 67, 0.12);
+  --hairline: rgba(0, 0, 0, 0.08);
+  --action-hover: rgba(0, 0, 0, 0.05);
+  --action-selected: rgba(0, 0, 0, 0.06);
+  --action-disabled-bg: rgba(118, 118, 128, 0.12);
+  --skeleton: rgba(118, 118, 128, 0.14);
+  --backdrop: rgba(0, 0, 0, 0.28);
+  --tooltip-bg: rgba(30, 30, 32, 0.88);
+
+  /* Customer-facing portal: agency brand, defaulting to this orange (src/index.css) */
+  --portal-brand: oklch(70.5% 0.213 47.604);
+  --portal-brand-hover: oklch(64.6% 0.222 41.116);
+  --portal-brand-on: #fff;
+  --portal-brand-tint: oklch(95.4% 0.038 75.164);
+  --portal-bg: #f5f6f8;
+  --portal-ink: #1d1d1f;
+
+  /* Transactional email palette (email-templates/*.html) */
+  --email-bg: #f5f7fa;
+  --email-border: #dde1e8;
+  --email-ink: #0d1117;
+  --email-ink-2: #2d3748;
+  --email-muted: #566176;
+  --email-chip-bg: #fff8e5;
+  --email-chip-border: #ffe299;
+  --email-chip-ink: #8a5a0b;
+}
+
+/* Dark scheme — data-theme="dark" on any ancestor */
+[data-theme="dark"] {
+  --ink: #f5f5f7;
+  --ink-2: #98989d;
+  --ink-3: #6e6e73;
+  --accent-strong: #ffc629;
+  --success: #30d158; --success-ink: #30d158; --success-bg: rgba(48, 209, 88, 0.16);
+  --warning: #ff9f0a; --warning-ink: #ffb340; --warning-bg: rgba(255, 159, 10, 0.16);
+  --error: #ff453a;   --error-ink: #ff6961;   --error-bg: rgba(255, 69, 58, 0.16);
+  --info: #98989d;    --info-ink: #98989d;    --info-bg: rgba(118, 118, 128, 0.24);
+  --primary: #f5f5f7;
+  --primary-hover: #d1d1d6;
+  --primary-dark: #d1d1d6;
+  --primary-light: #e5e5ea;
+  --primary-contrast: #1d1d1f;
+  --secondary: #2c2c2e;
+  --secondary-contrast: #f5f5f7;
+  --text-disabled: rgba(235, 235, 245, 0.3);
+  --bg-default: #000000;
+  --bg-paper: #161618;
+  --bg-warm-glow: #1f1a0a;
+  --surface-card: #1c1c1e;
+  --surface-glass: rgba(30, 30, 32, 0.72);
+  --surface-menu: rgba(44, 44, 46, 0.88);
+  --surface-selected: #3a3a3c;
+  --fill: rgba(118, 118, 128, 0.24);
+  --fill-hover: rgba(118, 118, 128, 0.32);
+  --fill-press: rgba(118, 118, 128, 0.4);
+  --divider: rgba(84, 84, 88, 0.45);
+  --hairline: rgba(255, 255, 255, 0.08);
+  --action-hover: rgba(255, 255, 255, 0.06);
+  --action-selected: rgba(255, 255, 255, 0.08);
+  --skeleton: rgba(118, 118, 128, 0.24);
+  --backdrop: rgba(0, 0, 0, 0.5);
+}

@@ -1,0 +1,16 @@
+**/.git
+**/.vs
+**/.idea
+**/.vscode
+**/bin
+**/obj
+**/node_modules
+**/TestResults
+client/dist
+src/Evently.Api/wwwroot
+tests
+.env
+.env.*
+.claude
+*.md
+docker-compose*.yml
