@@ -13,6 +13,7 @@ ASP.NET Core 10 API + React SPA, PostgreSQL, email and password sign-in with rol
 - Place search with Google Places (served by the backend, the key never reaches the browser) and an interactive map with a pin.
 - The event website's best declared favicon is fetched and used as the event logo. The page description fills an empty description.
 - CSV export of the filtered list (UTF-8 with BOM, safe against spreadsheet formula injection).
+- CSV import of the same format. Missing categories and topics are created, events already in the list (same title and start date) are skipped, and one bad row rejects the whole file. Up to 1000 rows. Topic names must not contain commas, and website icons are fetched later with Refresh.
 - Users with first and last name and a role:
 
 | Role   | Can do                                                    |
@@ -93,7 +94,7 @@ src/Evently.Api/
   Events/       validation, queries and website enrichment
   Favicons/     website icon fetching (SSRF-safe)
   Places/       Google Places client
-  Export/       CSV
+  Export/       CSV export and import
   Security/     roles
   Migrations/   EF Core migrations
 client/         React + Vite + MUI
