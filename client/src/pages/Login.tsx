@@ -1,7 +1,8 @@
 import { Visibility, VisibilityOff } from '@mui/icons-material'
 import { Alert, Box, Button, Card, IconButton, InputAdornment, Stack, TextField, Typography } from '@mui/material'
 import { useState } from 'react'
-import { api, ApiError, errText } from '../api'
+import { ApiError, errText } from '../api'
+import { usePostApiAuthLogin, usePostApiAuthRegister } from '../api/generated/endpoints'
 import Logo from '../components/Logo'
 
 export default function Login({ onDone, setup }: { onDone: () => void; setup: boolean }) {
@@ -11,14 +12,16 @@ export default function Login({ onDone, setup }: { onDone: () => void; setup: bo
   const [show, setShow] = useState(false)
   const [error, setError] = useState('')
   const signIn = mode === 'login'
+  const register = usePostApiAuthRegister()
+  const login = usePostApiAuthLogin()
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
     try {
       const creds = { email, password }
-      if (!signIn) await api('/api/auth/register', 'POST', creds)
-      await api('/api/auth/login?useCookies=true', 'POST', creds)
+      if (!signIn) await register.mutateAsync({ data: creds })
+      await login.mutateAsync({ data: creds, params: { useCookies: true } })
       onDone()
     } catch (err) {
       if (err instanceof ApiError && err.status === 401)

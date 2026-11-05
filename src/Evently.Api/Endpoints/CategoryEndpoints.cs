@@ -9,7 +9,8 @@ public static class CategoryEndpoints
         var categories = app.MapGroup("/api/categories").RequireAuthorization();
 
         categories.MapGet("/", (AppDb db) => db.Categories.OrderBy(c => c.Name)
-            .Select(c => new { c.Id, c.Name, EventCount = db.Events.Count(e => e.CategoryId == c.Id) }).ToListAsync());
+            .Select(c => new NameCount(c.Id, c.Name, db.Events.Count(e => e.CategoryId == c.Id)))
+            .ToListAsync()).WithName("ListCategories");
 
         categories.MapPost("/", async (NameIn body, AppDb db) =>
         {
@@ -20,7 +21,7 @@ public static class CategoryEndpoints
             db.Categories.Add(c);
             await db.SaveChangesAsync();
             return Results.Created($"/api/categories/{c.Id}", c);
-        }).RequireAuthorization("Editor");
+        }).RequireAuthorization("Editor").WithName("CreateCategory").Produces<Category>(201);
 
         categories.MapPut("/{id:int}", async (int id, NameIn body, AppDb db) =>
         {
@@ -32,7 +33,7 @@ public static class CategoryEndpoints
             c.Name = name;
             await db.SaveChangesAsync();
             return Results.Ok(c);
-        }).RequireAuthorization("Editor");
+        }).RequireAuthorization("Editor").WithName("UpdateCategory").Produces<Category>();
 
         categories.MapDelete("/{id:int}", async (int id, AppDb db) =>
         {
@@ -42,6 +43,6 @@ public static class CategoryEndpoints
             db.Categories.Remove(c);
             await db.SaveChangesAsync();
             return Results.NoContent();
-        }).RequireAuthorization("Editor");
+        }).RequireAuthorization("Editor").WithName("DeleteCategory");
     }
 }
