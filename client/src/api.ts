@@ -55,8 +55,8 @@ export async function api<T = void>(path: string, method = 'GET', body?: unknown
   const res = await fetch(path, {
     method,
     credentials: 'include',
-    headers: body === undefined ? headers : { 'Content-Type': 'application/json', ...headers },
-    body: body === undefined ? undefined : JSON.stringify(body),
+    headers: body === undefined || body instanceof Blob ? headers : { 'Content-Type': 'application/json', ...headers },
+    body: body === undefined || body instanceof Blob ? body : JSON.stringify(body),
   })
   if (!res.ok) throw new ApiError(res.status, await errorMessage(res))
   const text = await res.text()

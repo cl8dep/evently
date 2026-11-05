@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using System.Text;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace Evently.Api;
@@ -19,6 +20,13 @@ public static class EventEndpoints
             var bytes = Encoding.UTF8.GetPreamble().Concat(Encoding.UTF8.GetBytes(Csv.Build(list))).ToArray();
             return Results.File(bytes, "text/csv; charset=utf-8", $"events-{DateTime.UtcNow:yyyy-MM-dd}.csv");
         });
+
+        events.MapPost("/import", async (HttpRequest req, AppDb db, ClaimsPrincipal user, CancellationToken ct) =>
+        {
+            using var reader = new StreamReader(req.Body, Encoding.UTF8);
+            var result = await EventImporter.Run(await reader.ReadToEndAsync(ct), db, user.Identity!.Name!, ct);
+            return result.Errors.Count > 0 ? Results.UnprocessableEntity(new { error = string.Join(" ", result.Errors) }) : Results.Ok(result);
+        }).RequireAuthorization("Editor").WithMetadata(new RequestSizeLimitAttribute(5_000_000));
 
         events.MapGet("/{id:int}", async (int id, AppDb db) =>
             await db.Events.WithDetails().FirstOrDefaultAsync(e => e.Id == id) is { } e ? Results.Ok(e) : Results.NotFound());

@@ -1,8 +1,8 @@
-import { Add, ChevronRight, Download, EventBusy, Search } from '@mui/icons-material'
+import { Add, ChevronRight, Download, EventBusy, Search, Upload } from '@mui/icons-material'
 import {
   Alert, Autocomplete, Box, Button, Chip, InputAdornment, MenuItem, Paper, Stack, TextField, Typography,
 } from '@mui/material'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link as RouterLink, useNavigate, useSearchParams } from 'react-router-dom'
 import { api, errText, type Category, type EventItem, type Topic } from '../api'
 import EventIcon from '../components/EventIcon'
@@ -26,6 +26,9 @@ export default function Events({ compact }: { compact: boolean }) {
   const countries = useRefs('countries')
   const [page, setPage] = useState(0)
   const [exported, setExported] = useState(false)
+  const [imported, setImported] = useState('')
+  const [rev, setRev] = useState(0)
+  const fileInput = useRef<HTMLInputElement>(null)
   const [error, setError] = useState('')
   const navigate = useNavigate()
 
@@ -37,17 +40,30 @@ export default function Events({ compact }: { compact: boolean }) {
   const qs = query.toString() ? `?${query}` : ''
   const filtered = qs !== ''
 
-  useEffect(() => { api<Category[]>('/api/categories').then(setCategories, () => {}) }, [])
-  useEffect(() => { api<Topic[]>('/api/topics').then(setTopics, () => {}) }, [])
+  useEffect(() => { api<Category[]>('/api/categories').then(setCategories, () => {}) }, [rev])
+  useEffect(() => { api<Topic[]>('/api/topics').then(setTopics, () => {}) }, [rev])
   useEffect(() => {
     api<EventItem[]>(`/api/events${qs}`).then(r => { setItems(r); setPage(0) }, e => setError(errText(e)))
-  }, [qs])
+  }, [qs, rev])
 
   const clear = () => { setQ(''); setCategoryId(''); setTopicId(''); setCountry('') }
   const count = `${items.length} ${items.length === 1 ? 'event' : 'events'}`
   const pages = Math.max(1, Math.ceil(items.length / PAGE))
   const rows = items.slice(page * PAGE, (page + 1) * PAGE)
   const exportCsv = () => setExported(true)
+  const importCsv = async (file?: File) => {
+    if (!file) return
+    setError(''); setImported(''); setExported(false)
+    try {
+      const r = await api<{ imported: number; skipped: number }>('/api/events/import', 'POST', file, { 'Content-Type': 'text/csv' })
+      setImported(`Imported ${r.imported} ${r.imported === 1 ? 'event' : 'events'}${r.skipped ? `, skipped ${r.skipped} already in the list` : ''}.`)
+      setRev(v => v + 1)
+    } catch (e) {
+      setError(errText(e))
+    } finally {
+      if (fileInput.current) fileInput.current.value = ''
+    }
+  }
 
   const filters = (
     <>
@@ -101,12 +117,19 @@ export default function Events({ compact }: { compact: boolean }) {
           </Typography>
         </Box>
         <Stack direction="row" spacing={1}>
+          {canEdit && (
+            <>
+              <input ref={fileInput} type="file" accept=".csv,text/csv" hidden onChange={e => importCsv(e.target.files?.[0])} />
+              <Button variant="outlined" size={compact ? 'small' : 'medium'} startIcon={<Upload />} onClick={() => fileInput.current?.click()}>Import CSV</Button>
+            </>
+          )}
           <Button component="a" href={`/api/events/export.csv${qs}`} onClick={exportCsv} variant="outlined" size={compact ? 'small' : 'medium'} startIcon={<Download />}>Export CSV</Button>
           {!compact && canEdit && <Button component={RouterLink} to="/events/new" variant="contained" startIcon={<Add />}>New event</Button>}
         </Stack>
       </Stack>
 
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+      {imported && <Alert severity="success" onClose={() => setImported('')} sx={{ mb: 2 }}>{imported}</Alert>}
       {exported && (
         <Alert severity="success" onClose={() => setExported(false)} sx={{ mb: 2 }}>
           Exported {count} to events-{new Date().toISOString().slice(0, 10)}.csv.
