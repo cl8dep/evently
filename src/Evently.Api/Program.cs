@@ -47,6 +47,7 @@ app.MapLookupEndpoints();
 app.MapCategoryEndpoints();
 app.MapTopicEndpoints();
 app.MapEventEndpoints();
+app.MapCommentEndpoints();
 app.MapPlaceEndpoints();
 app.MapSearchEndpoints();
 app.MapGet("/api/health", () => Results.Ok());

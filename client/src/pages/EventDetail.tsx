@@ -8,6 +8,7 @@ import Crumbs from '../components/Crumbs'
 import { useAuth } from '../auth'
 import PlaceMap from '../components/PlaceMap'
 import EventIcon from '../components/EventIcon'
+import Comments from '../components/Comments'
 import { day, longRange, place, shortRange, ticket } from '../format'
 
 export default function EventDetail() {
@@ -131,6 +132,7 @@ export default function EventDetail() {
         </Box>
         {hasMap && <PlaceMap lat={l.latitude!} lng={l.longitude!} title={e.title} height={340} sx={{ position: { md: 'sticky' }, top: { md: 76 } }} />}
       </Paper>
+      <Comments eventId={e.id} />
     </Box>
   )
 }

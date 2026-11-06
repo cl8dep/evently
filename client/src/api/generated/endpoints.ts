@@ -27,6 +27,8 @@ import type {
   AccessTokenResponse,
   AutocompletePlacesParams,
   Category,
+  CommentIn,
+  CommentOut,
   ConfigOut,
   Country,
   Currency,
@@ -2632,6 +2634,216 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
         TContext
       > => {
       return useMutation(getRefreshEventIconMutationOptions(options), queryClient);
+    }
+
+export const listComments = (
+    id: number,
+ options?: SecondParameter<typeof fetcher>,signal?: AbortSignal
+) => {
+
+
+      return fetcher<CommentOut[]>(
+      {url: `/api/events/${id}/comments`, method: 'GET', signal
+    },
+      options);
+    }
+
+
+
+
+export const getListCommentsQueryKey = (id: number,) => {
+    return [
+    `/api/events/${id}/comments`
+    ] as const;
+    }
+
+
+export const getListCommentsQueryOptions = <TData = Awaited<ReturnType<typeof listComments>>, TError = unknown>(id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listComments>>, TError, TData>>, request?: SecondParameter<typeof fetcher>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListCommentsQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listComments>>> = ({ signal }) => listComments(id, requestOptions, signal);
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listComments>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListCommentsQueryResult = NonNullable<Awaited<ReturnType<typeof listComments>>>
+export type ListCommentsQueryError = unknown
+
+
+export function useListComments<TData = Awaited<ReturnType<typeof listComments>>, TError = unknown>(
+ id: number, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listComments>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listComments>>,
+          TError,
+          Awaited<ReturnType<typeof listComments>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof fetcher>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListComments<TData = Awaited<ReturnType<typeof listComments>>, TError = unknown>(
+ id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listComments>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listComments>>,
+          TError,
+          Awaited<ReturnType<typeof listComments>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof fetcher>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListComments<TData = Awaited<ReturnType<typeof listComments>>, TError = unknown>(
+ id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listComments>>, TError, TData>>, request?: SecondParameter<typeof fetcher>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useListComments<TData = Awaited<ReturnType<typeof listComments>>, TError = unknown>(
+ id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listComments>>, TError, TData>>, request?: SecondParameter<typeof fetcher>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListCommentsQueryOptions(id,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const createComment = (
+    id: number,
+    commentIn: CommentIn,
+ options?: SecondParameter<typeof fetcher>,signal?: AbortSignal
+) => {
+
+
+      return fetcher<CommentOut>(
+      {url: `/api/events/${id}/comments`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: commentIn, signal
+    },
+      options);
+    }
+
+
+
+
+export const getCreateCommentMutationKey = () => ['createComment'] as const;
+
+export const getCreateCommentMutationOptions = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createComment>>, TError,CreateCommentMutationVariables, TContext>, request?: SecondParameter<typeof fetcher>}
+): UseMutationOptions<Awaited<ReturnType<typeof createComment>>, TError,CreateCommentMutationVariables, TContext> => {
+
+const mutationKey = getCreateCommentMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createComment>>, CreateCommentMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  createComment(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateCommentMutationResult = NonNullable<Awaited<ReturnType<typeof createComment>>>
+    export type CreateCommentMutationBody = CommentIn
+    export type CreateCommentMutationError = unknown
+    export type CreateCommentMutationVariables = {id: number;data: CommentIn}
+
+    export const useCreateComment = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createComment>>, TError,CreateCommentMutationVariables, TContext>, request?: SecondParameter<typeof fetcher>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof createComment>>,
+        TError,
+        CreateCommentMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCreateCommentMutationOptions(options), queryClient);
+    }
+
+export const deleteComment = (
+    id: number,
+ options?: SecondParameter<typeof fetcher>,signal?: AbortSignal
+) => {
+
+
+      return fetcher<void>(
+      {url: `/api/comments/${id}`, method: 'DELETE', signal
+    },
+      options);
+    }
+
+
+
+
+export const getDeleteCommentMutationKey = () => ['deleteComment'] as const;
+
+export const getDeleteCommentMutationOptions = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteComment>>, TError,DeleteCommentMutationVariables, TContext>, request?: SecondParameter<typeof fetcher>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteComment>>, TError,DeleteCommentMutationVariables, TContext> => {
+
+const mutationKey = getDeleteCommentMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteComment>>, DeleteCommentMutationVariables> = (props) => {
+          const {id} = props ?? {};
+
+          return  deleteComment(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteCommentMutationResult = NonNullable<Awaited<ReturnType<typeof deleteComment>>>
+
+    export type DeleteCommentMutationError = unknown
+    export type DeleteCommentMutationVariables = {id: number}
+
+    export const useDeleteComment = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteComment>>, TError,DeleteCommentMutationVariables, TContext>, request?: SecondParameter<typeof fetcher>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof deleteComment>>,
+        TError,
+        DeleteCommentMutationVariables,
+        TContext
+      > => {
+      return useMutation(getDeleteCommentMutationOptions(options), queryClient);
     }
 
 export const autocompletePlaces = (

@@ -13,6 +13,7 @@ public class AppDb(DbContextOptions<AppDb> options) : IdentityDbContext<AppUser>
     public DbSet<Country> Countries => Set<Country>();
     public DbSet<Currency> Currencies => Set<Currency>();
     public DbSet<EventIcon> EventIcons => Set<EventIcon>();
+    public DbSet<Comment> Comments => Set<Comment>();
 
     protected override void OnModelCreating(ModelBuilder b)
     {
@@ -57,6 +58,13 @@ public class AppDb(DbContextOptions<AppDb> options) : IdentityDbContext<AppUser>
             e.HasOne(k => k.Event).WithMany().HasForeignKey(k => k.EventId).OnDelete(DeleteBehavior.Cascade);
         });
         b.Entity<EventIcon>().HasKey(i => i.EventId);
+        b.Entity<Comment>(e =>
+        {
+            e.Property(c => c.Author).HasMaxLength(256);
+            e.Property(c => c.Body).HasMaxLength(2000);
+            e.HasIndex(c => new { c.EventId, c.CreatedAt });
+            e.HasOne<Event>().WithMany().HasForeignKey(c => c.EventId).OnDelete(DeleteBehavior.Cascade);
+        });
         b.Entity<Event>(e =>
         {
             e.HasOne(x => x.Category).WithMany().HasForeignKey(x => x.CategoryId).OnDelete(DeleteBehavior.Restrict);
