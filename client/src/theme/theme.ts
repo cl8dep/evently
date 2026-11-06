@@ -92,6 +92,24 @@ export const theme = createTheme({
         },
       },
     },
+    // Segmented control: gray track, raised white thumb for the selected tab.
+    MuiTabs: {
+      defaultProps: { slotProps: { indicator: { style: { display: 'none' } } } },
+      styleOverrides: {
+        root: { minHeight: 0, padding: 2, borderRadius: 999, backgroundColor: 'var(--fill)', width: 'fit-content', maxWidth: '100%' },
+        list: { gap: 2 },
+      },
+    },
+    MuiTab: {
+      styleOverrides: {
+        root: {
+          minHeight: 0, minWidth: 0, padding: '7px 18px', borderRadius: 999, fontSize: 13.5, fontWeight: 590, textTransform: 'none',
+          color: ink,
+          '&.Mui-selected': { color: ink, backgroundColor: 'var(--surface-selected)', boxShadow: 'var(--shadow-raised)' },
+          '&.Mui-focusVisible': { boxShadow: focusRing },
+        },
+      },
+    },
     MuiListItemIcon: { styleOverrides: { root: { minWidth: 32, color: 'inherit' } } },
   },
 })

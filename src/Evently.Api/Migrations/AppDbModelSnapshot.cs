@@ -132,6 +132,37 @@ namespace Evently.Api.Migrations
                     b.ToTable("Categories");
                 });
 
+            modelBuilder.Entity("Evently.Api.Comment", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Author")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<string>("Body")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("EventId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EventId", "CreatedAt");
+
+                    b.ToTable("Comments");
+                });
+
             modelBuilder.Entity("Evently.Api.Country", b =>
                 {
                     b.Property<string>("Code")
@@ -2579,6 +2610,15 @@ namespace Evently.Api.Migrations
                     b.HasOne("Evently.Api.Topic", null)
                         .WithMany()
                         .HasForeignKey("TopicsId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Evently.Api.Comment", b =>
+                {
+                    b.HasOne("Evently.Api.Event", null)
+                        .WithMany()
+                        .HasForeignKey("EventId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

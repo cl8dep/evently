@@ -1,12 +1,13 @@
 import { Add, ChevronRight, Download, EventBusy, Search, Upload } from '@mui/icons-material'
 import {
-  Alert, Autocomplete, Box, Button, Chip, InputAdornment, MenuItem, Paper, Stack, TextField, Typography,
+  Alert, Autocomplete, Box, Button, Chip, InputAdornment, MenuItem, Paper, Stack, Tab, Tabs, TextField, Typography,
 } from '@mui/material'
 import { useEffect, useRef, useState } from 'react'
 import { Link as RouterLink, useNavigate, useSearchParams } from 'react-router-dom'
 import { errText } from '../api'
 import { useImportEvents, useListCategories, useListEvents, useListTopics } from '../api/generated/endpoints'
 import type { ListEventsParams } from '../api/generated/model'
+import EventCalendar from '../components/EventCalendar'
 import EventIcon from '../components/EventIcon'
 import { useAuth } from '../auth'
 import { useRefs } from '../refs'
@@ -25,6 +26,7 @@ export default function Events({ compact }: { compact: boolean }) {
   const { canEdit } = useAuth()
   const countries = useRefs('countries')
   const [page, setPage] = useState(0)
+  const [view, setView] = useState<'list' | 'calendar'>(params.get('view') === 'calendar' ? 'calendar' : 'list')
   const [exported, setExported] = useState(false)
   const [imported, setImported] = useState('')
   const importEvents = useImportEvents()
@@ -101,6 +103,13 @@ export default function Events({ compact }: { compact: boolean }) {
     </>
   )
 
+  const viewTabs = (
+    <Tabs value={view} onChange={(_, v) => setView(v)}>
+      <Tab value="list" label="List" />
+      <Tab value="calendar" label="Calendar" />
+    </Tabs>
+  )
+
   const empty = (
     <Stack sx={{ alignItems: 'center', textAlign: 'center', py: 6, px: 2 }} spacing={1}>
       <EventBusy sx={{ fontSize: 32, color: 'text.disabled' }} />
@@ -141,7 +150,7 @@ export default function Events({ compact }: { compact: boolean }) {
         </Alert>
       )}
 
-      {compact && <Stack direction="row" sx={{ flexWrap: 'wrap', gap: 1, mb: 1.75 }}>{filters}</Stack>}
+      {compact && <Stack direction="row" sx={{ flexWrap: 'wrap', gap: 1, mb: 1.75 }}>{viewTabs}{filters}</Stack>}
 
       <Paper sx={{ overflow: 'hidden' }}>
         {!compact && (
@@ -149,11 +158,12 @@ export default function Events({ compact }: { compact: boolean }) {
             {filters}
             {filtered && <Button size="small" onClick={clear}>Clear filters</Button>}
             <Box sx={{ flex: 1 }} />
+            {viewTabs}
             <Typography variant="body2" color="text.secondary" sx={{ fontSize: 13 }}>{count}</Typography>
           </Stack>
         )}
 
-        {compact ? rows.map(e => (
+        {view === 'calendar' ? <EventCalendar events={items} /> : compact ? rows.map(e => (
           <Box
             key={e.id} component={RouterLink} to={`/events/${e.id}`}
             sx={{ display: 'flex', alignItems: 'center', gap: 1.5, py: 1.5, pl: 2, pr: 1.5, borderBottom: '1px solid var(--divider)', textDecoration: 'none', color: 'inherit', minHeight: 44 }}
@@ -207,9 +217,9 @@ export default function Events({ compact }: { compact: boolean }) {
           </Box>
         )}
 
-        {items.length === 0 && empty}
+        {view === 'list' && items.length === 0 && empty}
 
-        {items.length > 0 && !compact && (
+        {view === 'list' && items.length > 0 && !compact && (
           <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between', px: 2.5, py: 1.25 }}>
             <Typography color="text.secondary">{page * PAGE + 1}&ndash;{page * PAGE + rows.length} of {items.length}</Typography>
             <Stack direction="row" spacing={0.75}>

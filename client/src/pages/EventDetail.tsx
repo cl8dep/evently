@@ -1,5 +1,5 @@
 import { Delete, Edit, OpenInNew, Refresh, WarningAmber } from '@mui/icons-material'
-import { Alert, Box, Button, Chip, Link, Paper, Stack, Typography } from '@mui/material'
+import { Alert, Box, Button, Chip, Link, Paper, Stack, Tab, Tabs, Typography } from '@mui/material'
 import { useState } from 'react'
 import { Link as RouterLink, useNavigate, useParams } from 'react-router-dom'
 import { errText } from '../api'
@@ -8,6 +8,7 @@ import Crumbs from '../components/Crumbs'
 import { useAuth } from '../auth'
 import PlaceMap from '../components/PlaceMap'
 import EventIcon from '../components/EventIcon'
+import Comments from '../components/Comments'
 import { day, longRange, place, shortRange, ticket } from '../format'
 
 export default function EventDetail() {
@@ -21,6 +22,7 @@ export default function EventDetail() {
   const [actionError, setError] = useState('')
   const error = actionError || (eventQuery.error ? errText(eventQuery.error) : '')
   const [confirming, setConfirming] = useState(false)
+  const [tab, setTab] = useState<'comments' | 'timeline'>('comments')
 
 
   const remove = async () => {
@@ -130,6 +132,19 @@ export default function EventDetail() {
         </Box>
         </Box>
         {hasMap && <PlaceMap lat={l.latitude!} lng={l.longitude!} title={e.title} height={340} sx={{ position: { md: 'sticky' }, top: { md: 76 } }} />}
+      </Paper>
+      <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ mt: 4 }}>
+        <Tab value="comments" label="Comments" />
+        <Tab value="timeline" label="Timeline" />
+      </Tabs>
+      <Paper sx={{ p: 3, mt: 2 }}>
+        {tab === 'comments' && <Comments eventId={e.id} />}
+        {tab === 'timeline' && (
+          <Stack spacing={1.5}>
+            <Typography>Added by <b>{e.createdBy}</b><Box component="span" sx={{ color: 'text.secondary' }}> &middot; {day(e.createdAt)}</Box></Typography>
+            {e.iconUpdatedAt && <Typography>Icon fetched<Box component="span" sx={{ color: 'text.secondary' }}> &middot; {day(e.iconUpdatedAt)}</Box></Typography>}
+          </Stack>
+        )}
       </Paper>
     </Box>
   )
