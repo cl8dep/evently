@@ -90,8 +90,16 @@ public sealed partial class FaviconFetcher
             var type = res.Content.Headers.ContentType?.MediaType ?? "";
             if (typePrefix == "image/" && type is "" or "application/octet-stream" && url.AbsolutePath.EndsWith(".ico", StringComparison.OrdinalIgnoreCase))
                 type = "image/x-icon";
-            if (!type.StartsWith(typePrefix, StringComparison.OrdinalIgnoreCase)) return null;
-            if (res.Content.Headers.ContentLength > max) return null;
+            if (!type.StartsWith(typePrefix, StringComparison.OrdinalIgnoreCase))
+            {
+                log.LogWarning("{Url} has content type '{Type}', expected {Prefix}*", url, type, typePrefix);
+                return null;
+            }
+            if (res.Content.Headers.ContentLength > max)
+            {
+                log.LogWarning("{Url} is larger than {Max} bytes", url, max);
+                return null;
+            }
             await using var stream = await res.Content.ReadAsStreamAsync(ct);
             using var buffer = new MemoryStream();
             var chunk = new byte[16 * 1024];

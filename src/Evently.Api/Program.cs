@@ -2,10 +2,13 @@ using Evently.Api;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddDbContext<AppDb>(o => o.UseNpgsql(builder.Configuration.GetConnectionString("Default")));
+// The runtime image has no Kerberos libraries, so skip the GSS encryption probe instead of failing to load them.
+var connection = new NpgsqlConnectionStringBuilder(builder.Configuration.GetConnectionString("Default")) { GssEncryptionMode = GssEncryptionMode.Disable }.ConnectionString;
+builder.Services.AddDbContext<AppDb>(o => o.UseNpgsql(connection));
 // Strict numbers keep the OpenAPI schema honest: integers are numbers, not "number or numeric string".
 builder.Services.ConfigureHttpJsonOptions(o => o.SerializerOptions.NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.Strict);
 builder.Services.AddOpenApi(o => o.AddSchemaTransformer((schema, _, _) => { RequiredProperties.Apply(schema); return Task.CompletedTask; }));
