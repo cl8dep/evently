@@ -54,7 +54,7 @@ public sealed partial class FaviconFetcher
             cts.CancelAfter(TimeSpan.FromSeconds(8));
             var candidates = new List<Uri>();
             var final = page;
-            var html = await Download(page, MaxHtml, "text/html", cts.Token);
+            var html = await Download(page, MaxHtml, "text/html", cts.Token, partial: true);
             if (html is not null)
             {
                 final = html.Value.Final;
@@ -77,7 +77,7 @@ public sealed partial class FaviconFetcher
         return new Site(icon, description);
     }
 
-    async Task<(byte[] Data, string ContentType, Uri Final)?> Download(Uri url, int max, string typePrefix, CancellationToken ct)
+    async Task<(byte[] Data, string ContentType, Uri Final)?> Download(Uri url, int max, string typePrefix, CancellationToken ct, bool partial = false)
     {
         try
         {
@@ -95,7 +95,7 @@ public sealed partial class FaviconFetcher
                 log.LogWarning("{Url} has content type '{Type}', expected {Prefix}*", url, type, typePrefix);
                 return null;
             }
-            if (res.Content.Headers.ContentLength > max)
+            if (!partial && res.Content.Headers.ContentLength > max)
             {
                 log.LogWarning("{Url} is larger than {Max} bytes", url, max);
                 return null;
@@ -107,7 +107,15 @@ public sealed partial class FaviconFetcher
             while ((n = await stream.ReadAsync(chunk, ct)) > 0)
             {
                 buffer.Write(chunk, 0, n);
-                if (buffer.Length > max) return null;
+                if (buffer.Length <= max) continue;
+                // Icons that are too big are rejected; a big page is cut off, since its <head> comes first.
+                if (!partial)
+                {
+                    log.LogWarning("{Url} is larger than {Max} bytes", url, max);
+                    return null;
+                }
+                buffer.SetLength(max);
+                break;
             }
             return buffer.Length == 0 ? null : (buffer.ToArray(), type, res.RequestMessage?.RequestUri ?? url);
         }
