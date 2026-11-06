@@ -28,8 +28,7 @@ export default function Comments({ eventId }: { eventId: number }) {
   }
 
   return (
-    <Box sx={{ mt: 4 }}>
-      <Typography variant="h3" sx={{ mb: 2 }}>Comments</Typography>
+    <Box>
       <Stack spacing={2} sx={{ mb: 2 }}>
         {list.data?.length === 0 && <Typography color="text.secondary">No comments yet.</Typography>}
         {list.data?.map(c => (
