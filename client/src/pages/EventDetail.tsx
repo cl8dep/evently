@@ -8,6 +8,8 @@ import Crumbs from '../components/Crumbs'
 import { useAuth } from '../auth'
 import PlaceMap from '../components/PlaceMap'
 import EventIcon from '../components/EventIcon'
+import AddToCalendar from '../components/AddToCalendar'
+import Attendance from '../components/Attendance'
 import Comments from '../components/Comments'
 import { day, longRange, place, shortRange, ticket } from '../format'
 
@@ -72,12 +74,15 @@ export default function EventDetail() {
             </Typography>
           </Box>
         </Stack>
-        {canEdit && (
-        <Stack direction="row" spacing={1} sx={{ flexShrink: 0 }}>
-          <Button component={RouterLink} to={`/events/${e.id}/edit`} variant="outlined" startIcon={<Edit />}>Edit</Button>
-          <Button variant="outlined" color="error" startIcon={<Delete />} onClick={() => setConfirming(true)}>Delete</Button>
+        <Stack direction="row" spacing={1} sx={{ flexShrink: 0, flexWrap: 'wrap' }}>
+          <AddToCalendar id={e.id} title={e.title} start={e.startDate} end={e.endDate} details={e.website} where={[l.venue, l.address || [l.city, l.region, l.country].filter(Boolean).join(', ')].filter(Boolean).join(', ')} />
+          {canEdit && (
+            <>
+              <Button component={RouterLink} to={`/events/${e.id}/edit`} variant="outlined" startIcon={<Edit />}>Edit</Button>
+              <Button variant="outlined" color="error" startIcon={<Delete />} onClick={() => setConfirming(true)}>Delete</Button>
+            </>
+          )}
         </Stack>
-        )}
       </Stack>
 
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
@@ -133,6 +138,7 @@ export default function EventDetail() {
         </Box>
         {hasMap && <PlaceMap lat={l.latitude!} lng={l.longitude!} title={e.title} height={340} sx={{ position: { md: 'sticky' }, top: { md: 76 } }} />}
       </Paper>
+      <Paper sx={{ p: 3, mt: 2 }}><Attendance eventId={e.id} /></Paper>
       <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ mt: 4 }}>
         <Tab value="comments" label="Comments" />
         <Tab value="timeline" label="Timeline" />

@@ -11,4 +11,6 @@ export interface CommentOut {
   authorName: string;
   body: string;
   createdAt: string;
+  /** @nullable */
+  editedAt: string | null;
 }

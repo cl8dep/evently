@@ -1,4 +1,6 @@
 using Evently.Api;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -22,6 +24,9 @@ builder.Services.AddAuthorizationBuilder()
 // Check the security stamp on every request so a role change or password reset applies immediately.
 builder.Services.Configure<SecurityStampValidatorOptions>(o => o.ValidationInterval = TimeSpan.Zero);
 builder.Services.AddIdentityApiEndpoints<AppUser>().AddRoles<IdentityRole>().AddEntityFrameworkStores<AppDb>();
+builder.Services.AddAuthentication().AddScheme<AuthenticationSchemeOptions, ApiKeyHandler>(ApiKeys.Scheme, null);
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddMcpServer().WithHttpTransport(o => o.Stateless = true).WithTools<EventTools>();
 builder.Services.ConfigureApplicationCookie(o =>
 {
     o.Events.OnRedirectToLogin = ctx => { ctx.Response.StatusCode = 401; return Task.CompletedTask; };
@@ -51,8 +56,12 @@ app.MapCategoryEndpoints();
 app.MapTopicEndpoints();
 app.MapEventEndpoints();
 app.MapCommentEndpoints();
+app.MapAttendanceEndpoints();
+app.MapCalendarEndpoints();
+app.MapApiKeyEndpoints();
 app.MapPlaceEndpoints();
 app.MapSearchEndpoints();
+app.MapMcp("/mcp").RequireAuthorization(new AuthorizeAttribute { AuthenticationSchemes = ApiKeys.Scheme });
 app.MapGet("/api/health", () => Results.Ok());
 
 app.MapFallbackToFile("{*path:regex(^(?!api)[^.]*$)}", "index.html");

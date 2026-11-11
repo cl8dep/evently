@@ -6,10 +6,18 @@
  */
 
 export * from './accessTokenResponse';
+export * from './apiKeyCreated';
+export * from './apiKeyIn';
+export * from './apiKeyOut';
+export * from './attendanceIn';
+export * from './attendanceStatus';
+export * from './attendeeOut';
 export * from './autocompletePlacesParams';
+export * from './calendarOut';
 export * from './category';
 export * from './commentIn';
 export * from './commentOut';
+export * from './commentPage';
 export * from './configOut';
 export * from './country';
 export * from './currency';
@@ -22,6 +30,7 @@ export * from './httpValidationProblemDetailsErrors';
 export * from './importResult';
 export * from './infoRequest';
 export * from './infoResponse';
+export * from './listCommentsParams';
 export * from './listEventsParams';
 export * from './location';
 export * from './loginRequest';

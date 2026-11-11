@@ -1,3 +1,3 @@
 namespace Evently.Api;
 
-public record CommentOut(int Id, string Author, string AuthorName, string Body, DateTime CreatedAt);
+public record CommentOut(int Id, string Author, string AuthorName, string Body, DateTime CreatedAt, DateTime? EditedAt);
