@@ -25,22 +25,22 @@ public class EventTools(AppDb db, IHttpContextAccessor http)
 
     [McpServerTool(Name = "list_attendees", ReadOnly = true), Description("Who is going, maybe going or not going to an event.")]
     public async Task<List<AttendeeOut>> ListAttendees(int eventId, CancellationToken ct = default) =>
-        await AttendanceEndpoints.Attendees(db, eventId).ToListAsync(ct);
+        await AttendanceQueries.Attendees(db, eventId).ToListAsync(ct);
 
     [McpServerTool(Name = "list_comments", ReadOnly = true), Description("The latest comments of an event, oldest first. Pass `before` (a comment id) for older ones.")]
     public async Task<List<CommentOut>> ListComments(int eventId, int? before = null, int limit = 20, CancellationToken ct = default) =>
-        (await CommentEndpoints.Thread(db, eventId, before: before).Take(Math.Clamp(limit, 1, 100)).ToListAsync(ct)).AsEnumerable().Reverse().ToList();
+        (await CommentQueries.Thread(db, eventId, before: before).Take(Math.Clamp(limit, 1, 100)).ToListAsync(ct)).AsEnumerable().Reverse().ToList();
 
     [McpServerTool(Name = "add_comment", Destructive = false), Description("Post a markdown comment on an event as the API key owner.")]
     public async Task<CommentOut> AddComment(int eventId, string body, CancellationToken ct = default)
     {
         var text = body.Trim();
-        if (text.Length == 0 || text.Length > CommentEndpoints.MaxBody) throw new McpException($"Comment is required (max {CommentEndpoints.MaxBody}).");
+        if (text.Length == 0 || text.Length > CommentQueries.MaxBody) throw new McpException($"Comment is required (max {CommentQueries.MaxBody}).");
         if (!await db.Events.AnyAsync(e => e.Id == eventId, ct)) throw new McpException($"Event {eventId} not found.");
         var c = new Comment { EventId = eventId, Author = Me, Body = text, CreatedAt = DateTime.UtcNow };
         db.Comments.Add(c);
         await db.SaveChangesAsync(ct);
-        return await CommentEndpoints.Thread(db, eventId, c.Id).SingleAsync(ct);
+        return await CommentQueries.Thread(db, eventId, c.Id).SingleAsync(ct);
     }
 
     [McpServerTool(Name = "set_attendance", Idempotent = true, Destructive = false), Description("Set the API key owner's status for an event: Going, Maybe or Declined.")]
@@ -52,6 +52,6 @@ public class EventTools(AppDb db, IHttpContextAccessor http)
         row.Status = status;
         row.UpdatedAt = DateTime.UtcNow;
         await db.SaveChangesAsync(ct);
-        return await AttendanceEndpoints.Attendees(db, eventId, Me).SingleAsync(ct);
+        return await AttendanceQueries.Attendees(db, eventId, Me).SingleAsync(ct);
     }
 }

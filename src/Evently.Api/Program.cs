@@ -13,6 +13,7 @@ var connection = new NpgsqlConnectionStringBuilder(builder.Configuration.GetConn
 builder.Services.AddDbContext<AppDb>(o => o.UseNpgsql(connection));
 // Strict numbers keep the OpenAPI schema honest: integers are numbers, not "number or numeric string".
 builder.Services.ConfigureHttpJsonOptions(o => o.SerializerOptions.NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.Strict);
+builder.Services.AddControllers().AddJsonOptions(o => o.JsonSerializerOptions.NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.Strict);
 builder.Services.AddOpenApi(o => o.AddSchemaTransformer((schema, _, _) => { RequiredProperties.Apply(schema); return Task.CompletedTask; }));
 builder.Services.AddSingleton<FaviconFetcher>();
 builder.Services.AddHttpClient<PlacesClient>(c => c.Timeout = TimeSpan.FromSeconds(8));
@@ -55,10 +56,7 @@ app.MapLookupEndpoints();
 app.MapCategoryEndpoints();
 app.MapTopicEndpoints();
 app.MapEventEndpoints();
-app.MapCommentEndpoints();
-app.MapAttendanceEndpoints();
-app.MapCalendarEndpoints();
-app.MapApiKeyEndpoints();
+app.MapControllers();
 app.MapPlaceEndpoints();
 app.MapSearchEndpoints();
 app.MapMcp("/mcp").RequireAuthorization(new AuthorizeAttribute { AuthenticationSchemes = ApiKeys.Scheme });

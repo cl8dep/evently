@@ -17,6 +17,7 @@ Event tracker for company networking. ASP.NET Core 10 minimal API (`src/Evently.
 - All code, comments, docs and commit messages in English. The UI is English only.
 - One class, record, enum or interface per file. Files live in the folder for their role (Domain, Contracts, Endpoints, ...).
 - Every C# type uses `namespace Evently.Api` whatever its folder. Changing namespaces renames entities in the EF snapshot and breaks migrations.
+- New endpoints are MVC controllers in `Controllers/` (attribute routes, `[EndpointName]` for the Orval hook name, `this.Invalid(...)` for validation errors). The older `Endpoints/*` minimal APIs stay until they are migrated.
 - Minimal comments, only for non-obvious why. No dead code.
 - Prefer integration tests against the real database over mocks.
 - No em-dashes in text. Commit messages are one sentence.
