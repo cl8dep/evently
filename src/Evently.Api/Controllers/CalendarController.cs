@@ -8,20 +8,29 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Evently.Api;
 
-[ApiController, Authorize, Produces("application/json")]
+[ApiController]
+[Authorize]
+[Produces("application/json")]
 public class CalendarController(AppDb db, UserManager<AppUser> users) : ControllerBase
 {
-    string Origin => $"{Request.Scheme}://{Request.Host}";
+    string Origin
+    {
+        get { return $"{Request.Scheme}://{Request.Host}"; }
+    }
 
     // One event, for "Add to calendar".
-    [HttpGet("/api/events/{id:int}/ics"), ApiExplorerSettings(IgnoreApi = true)]
-    public async Task<ActionResult> Single(int id) =>
-        await db.Events.AsNoTracking().FirstOrDefaultAsync(e => e.Id == id) is { } e
-            ? File(Encoding.UTF8.GetBytes(Ics.Build([e], e.Title, Origin)), "text/calendar; charset=utf-8", $"event-{id}.ics")
-            : NotFound();
+    [HttpGet("/api/events/{id:int}/ics")]
+    [ApiExplorerSettings(IgnoreApi = true)]
+    public async Task<ActionResult> Single(int id)
+    {
+        var e = await db.Events.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id);
+        if (e is null) return NotFound();
+        return File(Encoding.UTF8.GetBytes(Ics.Build([e], e.Title, Origin)), "text/calendar; charset=utf-8", $"event-{id}.ics");
+    }
 
     // The feed URL embeds a secret token because calendar apps cannot send cookies.
-    [HttpGet("/api/me/calendar"), EndpointName("GetCalendarFeed")]
+    [HttpGet("/api/me/calendar")]
+    [EndpointName("GetCalendarFeed")]
     public async Task<ActionResult<CalendarOut>> Feed()
     {
         var me = (await users.GetUserAsync(User))!;
@@ -29,7 +38,8 @@ public class CalendarController(AppDb db, UserManager<AppUser> users) : Controll
         return new CalendarOut(FeedPath(me.CalendarToken!));
     }
 
-    [HttpPost("/api/me/calendar"), EndpointName("ResetCalendarFeed")]
+    [HttpPost("/api/me/calendar")]
+    [EndpointName("ResetCalendarFeed")]
     public async Task<ActionResult<CalendarOut>> Reset()
     {
         var me = (await users.GetUserAsync(User))!;
@@ -37,7 +47,9 @@ public class CalendarController(AppDb db, UserManager<AppUser> users) : Controll
         return new CalendarOut(FeedPath(me.CalendarToken!));
     }
 
-    [AllowAnonymous, HttpGet("/api/calendar/{token}/events.ics"), ApiExplorerSettings(IgnoreApi = true)]
+    [AllowAnonymous]
+    [HttpGet("/api/calendar/{token}/events.ics")]
+    [ApiExplorerSettings(IgnoreApi = true)]
     public async Task<ActionResult> Subscription(string token, [FromQuery] EventFilter f, bool? mine)
     {
         var me = await db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.CalendarToken == token);
@@ -49,7 +61,10 @@ public class CalendarController(AppDb db, UserManager<AppUser> users) : Controll
         return Content(Ics.Build(list, mine == true ? "My Evently events" : "Evently events", Origin), "text/calendar; charset=utf-8");
     }
 
-    static string FeedPath(string token) => $"/api/calendar/{token}/events.ics";
+    static string FeedPath(string token)
+    {
+        return $"/api/calendar/{token}/events.ics";
+    }
 
     async Task Rotate(AppUser user)
     {

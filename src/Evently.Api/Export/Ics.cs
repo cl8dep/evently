@@ -29,7 +29,10 @@ public static class Ics
         return string.Concat(lines.Select(Fold));
     }
 
-    static string Escape(string s) => s.Replace("\\", "\\\\").Replace(";", "\\;").Replace(",", "\\,").Replace("\r\n", "\\n").Replace("\n", "\\n");
+    static string Escape(string s)
+    {
+        return s.Replace("\\", "\\\\").Replace(";", "\\;").Replace(",", "\\,").Replace("\r\n", "\\n").Replace("\n", "\\n");
+    }
 
     // Content lines are at most 75 octets; continuation lines start with a space.
     static string Fold(string line)
