@@ -1,3 +1,4 @@
+import CalendarSubscribe from '../components/CalendarSubscribe'
 import { Add, ChevronRight, Download, EventBusy, Search, Upload } from '@mui/icons-material'
 import {
   Alert, Autocomplete, Box, Button, Chip, InputAdornment, MenuItem, Paper, Stack, Tab, Tabs, TextField, Typography,
@@ -137,6 +138,7 @@ export default function Events({ compact }: { compact: boolean }) {
               <Button variant="outlined" size={compact ? 'small' : 'medium'} startIcon={<Upload />} onClick={() => fileInput.current?.click()}>Import CSV</Button>
             </>
           )}
+          <CalendarSubscribe size={compact ? 'small' : 'medium'} />
           <Button component="a" href={`/api/events/export.csv${qs}`} onClick={exportCsv} variant="outlined" size={compact ? 'small' : 'medium'} startIcon={<Download />}>Export CSV</Button>
           {!compact && canEdit && <Button component={RouterLink} to="/events/new" variant="contained" startIcon={<Add />}>New event</Button>}
         </Stack>

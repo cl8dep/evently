@@ -7,4 +7,5 @@ public class Comment
     public string Author { get; set; } = "";
     public string Body { get; set; } = "";
     public DateTime CreatedAt { get; set; }
+    public DateTime? EditedAt { get; set; }
 }

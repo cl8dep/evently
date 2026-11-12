@@ -1,4 +1,4 @@
-import { CalendarMonth, Add, Close, Logout, Menu, Sell, People, Search, Tag } from '@mui/icons-material'
+import { CalendarMonth, Add, Close, Key, Logout, Menu, Sell, People, Search, Tag } from '@mui/icons-material'
 import {
   Box, Button, ButtonBase, CircularProgress, Drawer, IconButton, List, ListItemButton, ListItemIcon, ListItemText, Typography, useMediaQuery,
 } from '@mui/material'
@@ -17,6 +17,7 @@ import EventDetail from './pages/EventDetail'
 import EventForm from './pages/EventForm'
 import Events from './pages/Events'
 import Login from './pages/Login'
+import ApiKeys from './pages/ApiKeys'
 import Users from './pages/Users'
 
 const WIDTH = 220
@@ -71,6 +72,10 @@ export default function App() {
       <ListItemButton selected={pathname.startsWith('/topics')} onClick={() => navigate('/topics')} sx={{ minHeight: compact ? 44 : 36 }}>
         <ListItemIcon><Tag fontSize="small" /></ListItemIcon>
         <ListItemText primary="Topics" />
+      </ListItemButton>
+      <ListItemButton selected={pathname.startsWith('/keys')} onClick={() => navigate('/keys')} sx={{ minHeight: compact ? 44 : 36 }}>
+        <ListItemIcon><Key fontSize="small" /></ListItemIcon>
+        <ListItemText primary="API keys" />
       </ListItemButton>
       {role === 'Admin' && (
         <ListItemButton selected={pathname.startsWith('/users')} onClick={() => navigate('/users')} sx={{ minHeight: compact ? 44 : 36 }}>
@@ -143,6 +148,7 @@ export default function App() {
             <Route path="/events/:id/edit" element={canEdit ? <EventForm /> : <Navigate to="/events" replace />} />
             <Route path="/categories" element={<Taxonomy kind="categories" />} />
             <Route path="/topics" element={<Taxonomy kind="topics" />} />
+            <Route path="/keys" element={<ApiKeys />} />
             <Route path="/users" element={role === 'Admin' ? <Users /> : <Navigate to="/events" replace />} />
             <Route path="*" element={<Navigate to="/events" replace />} />
           </Routes>

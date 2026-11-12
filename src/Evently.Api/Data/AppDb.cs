@@ -14,6 +14,8 @@ public class AppDb(DbContextOptions<AppDb> options) : IdentityDbContext<AppUser>
     public DbSet<Currency> Currencies => Set<Currency>();
     public DbSet<EventIcon> EventIcons => Set<EventIcon>();
     public DbSet<Comment> Comments => Set<Comment>();
+    public DbSet<Attendance> Attendance => Set<Attendance>();
+    public DbSet<ApiKey> ApiKeys => Set<ApiKey>();
 
     protected override void OnModelCreating(ModelBuilder b)
     {
@@ -26,6 +28,8 @@ public class AppDb(DbContextOptions<AppDb> options) : IdentityDbContext<AppUser>
         {
             e.Property(u => u.FirstName).HasMaxLength(100);
             e.Property(u => u.LastName).HasMaxLength(100);
+            e.Property(u => u.CalendarToken).HasMaxLength(64);
+            e.HasIndex(u => u.CalendarToken).IsUnique();
         });
         b.Entity<Category>(e =>
         {
@@ -64,6 +68,21 @@ public class AppDb(DbContextOptions<AppDb> options) : IdentityDbContext<AppUser>
             e.Property(c => c.Body).HasMaxLength(2000);
             e.HasIndex(c => new { c.EventId, c.CreatedAt });
             e.HasOne<Event>().WithMany().HasForeignKey(c => c.EventId).OnDelete(DeleteBehavior.Cascade);
+        });
+        b.Entity<ApiKey>(e =>
+        {
+            e.Property(k => k.Name).HasMaxLength(100);
+            e.Property(k => k.Prefix).HasMaxLength(16);
+            e.Property(k => k.Hash).HasMaxLength(64);
+            e.HasIndex(k => k.Hash).IsUnique();
+            e.HasOne<AppUser>().WithMany().HasForeignKey(k => k.UserId).OnDelete(DeleteBehavior.Cascade);
+        });
+        b.Entity<Attendance>(e =>
+        {
+            e.HasKey(a => new { a.EventId, a.UserName });
+            e.Property(a => a.UserName).HasMaxLength(256);
+            e.Property(a => a.Status).HasConversion<string>().HasMaxLength(16);
+            e.HasOne<Event>().WithMany().HasForeignKey(a => a.EventId).OnDelete(DeleteBehavior.Cascade);
         });
         b.Entity<Event>(e =>
         {
